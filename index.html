@@ -13,14 +13,14 @@
 <script>(function(){var t=null;try{t=localStorage.getItem("WF_THEME")}catch(e){}var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)})()</script>
 <style>
   body{
-    padding-top:calc(env(safe-area-inset-top,0px) + 20px);
+    padding-top:calc(max(env(safe-area-inset-top,0px),47px) + 28px);
     padding-bottom:max(110px,env(safe-area-inset-bottom));
     padding-left:max(16px,env(safe-area-inset-left));
     padding-right:max(16px,env(safe-area-inset-right));
     -webkit-tap-highlight-color:transparent
   }
   /* 狀態列 / 動態島遮罩：捲動時內容不會滑進去 */
-  body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#f8fafc;z-index:20;pointer-events:none}
+  body::before{content:"";position:fixed;top:0;left:0;right:0;height:calc(max(env(safe-area-inset-top,0px),47px) + 8px);background:#f8fafc;z-index:20;pointer-events:none}
   html.dark body::before{background:#0f172a}
 
   input,select{font-size:16px!important;border-radius:.75rem}
