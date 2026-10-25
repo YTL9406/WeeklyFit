@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Weekly Fit" />
 <title>Weekly Fit - 週運動目標追蹤</title>
 <link id="app-favicon" rel="icon" type="image/png" href="" />
@@ -11,8 +12,22 @@
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>(function(){var t=null;try{t=localStorage.getItem("WF_THEME")}catch(e){}var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)})()</script>
 <style>
-  body{padding-top:max(16px,calc(env(safe-area-inset-top) + 14px));padding-bottom:max(110px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));-webkit-tap-highlight-color:transparent}
+  body{
+    padding-top:calc(env(safe-area-inset-top,0px) + 20px);
+    padding-bottom:max(110px,env(safe-area-inset-bottom));
+    padding-left:max(16px,env(safe-area-inset-left));
+    padding-right:max(16px,env(safe-area-inset-right));
+    -webkit-tap-highlight-color:transparent
+  }
+  /* 狀態列 / 動態島遮罩：捲動時內容不會滑進去 */
+  body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#f8fafc;z-index:20;pointer-events:none}
+  html.dark body::before{background:#0f172a}
+
   input,select{font-size:16px!important;border-radius:.75rem}
+  /* iOS 日期欄位跑版修正 */
+  input[type="date"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;height:46px;box-sizing:border-box;text-align:center}
+  input[type="date"]::-webkit-date-and-time-value{text-align:center;margin:0}
+
   select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:36px!important}
   .ring{transition:stroke-dashoffset .35s ease-in-out,stroke .3s;transform:rotate(-90deg);transform-origin:50% 50%}
   .sheet{transition:transform .25s ease}
@@ -173,7 +188,7 @@
 <div id="dateModal" role="dialog" aria-modal="true" onclick="if(event.target===this)closeDateModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
   <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4">
     <h3 class="text-sm font-bold">選擇本週起始日期</h3>
-    <input type="date" id="modalStartDateInput" onchange="updateModalRangePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" />
+    <input type="date" id="modalStartDateInput" onchange="updateModalRangePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 font-medium" />
     <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-100 text-xs"><span class="text-sky-600 font-semibold block mb-0.5">自動區間：</span><span id="modalRangePreviewText" class="text-sky-900 font-bold"></span></div>
     <div class="flex gap-2 justify-end">
       <button onclick="closeDateModal()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button>
