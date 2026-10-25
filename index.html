@@ -1,806 +1,722 @@
-<!doctype html>
-<html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>Weekly Fit - 每週有氧時間追蹤</title>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Weekly Fit - 每週運動追蹤</title>
 
-    <!-- 網頁分頁圖示 (Favicon & Apple Touch Icon) -->
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%230F172A'/><path d='M80 50h-16l-12 36L36 14l-12 36H8' fill='none' stroke='%23FFFFFF' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/></svg>"
-    />
-    <link
-      rel="apple-touch-icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%230F172A'/><path d='M80 50h-16l-12 36L36 14l-12 36H8' fill='none' stroke='%23FFFFFF' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/></svg>"
-    />
+  <!-- iOS 主畫面圖示 (Apple Touch Icon): 深色背景 + 心電圖/脈搏圖案 SVG -->
+  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%230f172a'/><path d='M25 90 H55 L68 55 L85 125 L102 70 L115 90 H155' stroke='%2338bdf8' stroke-width='10' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='85' cy='125' r='4' fill='%2338bdf8'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f172a'/><path d='M15 50 H32 L40 30 L50 70 L60 40 L67 50 H85' stroke='%2338bdf8' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 
-    <!-- PWA Manifest & Meta -->
-    <meta name="theme-color" content="#F8FAF9" />
-    <link rel="manifest" href="manifest.json" />
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: "#0F172A",
-              accent: "#3B82F6",
-              bglight: "#F8FAF9",
-              cardbg: "#FFFFFF",
-              bordercolor: "#E2E8F0",
-              textmuted: "#64748B",
-            },
-          },
-        },
-      };
-    </script>
-    <style>
-      @keyframes pulse-green {
-        0%,
-        100% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 0.4;
-          transform: scale(0.95);
-        }
-      }
-      .green-dot {
-        animation: pulse-green 2s infinite ease-in-out;
-      }
-      /* 客製化下拉選單箭頭位置 */
-      .custom-select {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 1.1em;
-        padding-right: 2.75rem !important;
-      }
-    </style>
-  </head>
-  <body
-    class="bg-bglight text-primary min-h-screen font-sans antialiased pb-12 selection:bg-blue-100"
-  >
-    <!-- 頂部導航列 -->
-    <header
-      class="sticky top-0 z-30 bg-bglight/80 backdrop-blur-md border-b border-bordercolor px-4 py-3"
-    >
-      <div class="max-w-md mx-auto flex justify-between items-center">
-        <div class="flex items-center space-x-2.5">
-          <!-- 心率波形 Logo -->
-          <div
-            class="w-9 h-9 bg-[#0F172A] text-white rounded-xl flex items-center justify-center shadow-sm p-1.5"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="w-full h-full"
-            >
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-          </div>
-          <div>
-            <h1
-              class="font-bold text-base tracking-tight leading-tight text-primary"
-            >
-              Weekly Fit
-            </h1>
-            <span class="text-xs text-textmuted flex items-center gap-1">
-              <span
-                class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"
-              ></span>
-              離線可用
-            </span>
-          </div>
+  <!-- Web App 相關設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Weekly Fit">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 圖示 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #f8fafc;
+    }
+    /* 針對 iOS 調整 input 安全性與樣式 */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen pb-12 antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- 頂部 Navigation Header -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 sm:px-6">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <!-- App Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sky-400 shadow-sm">
+          <i class="fa-solid font-bold text-lg fa-heart-pulse"></i>
         </div>
-        <!-- 頁籤切換 -->
-        <div class="bg-bordercolor/60 p-1 rounded-xl flex text-xs font-medium">
-          <button
-            id="tab-current"
-            onclick="switchTab('current')"
-            class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-primary transition-all"
-          >
-            本週累計
-          </button>
-          <button
-            id="tab-history"
-            onclick="switchTab('history')"
-            class="px-3 py-1.5 rounded-lg text-textmuted transition-all"
-          >
-            歷史歸檔
-            <span
-              id="history-count"
-              class="ml-0.5 bg-bordercolor px-1.5 py-0.2 rounded-full text-[10px]"
-              >0</span
-            >
-          </button>
+        <div>
+          <h1 class="font-bold text-slate-900 text-lg leading-tight">Weekly Fit</h1>
+          <div class="flex items-center space-x-1.5 text-xs text-emerald-600 font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>離線可用</span>
+          </div>
         </div>
       </div>
-    </header>
 
-    <!-- 主容器 -->
-    <main class="max-w-md mx-auto px-4 mt-5 space-y-5">
-      <!-- 區塊：本週累計 -->
-      <div id="section-current" class="space-y-5">
-        <!-- 儀表板總卡片 -->
-        <div
-          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm relative overflow-hidden"
-        >
-          <div class="flex justify-between items-start">
-            <div>
-              <div
-                class="flex items-center space-x-2 text-xs text-textmuted mb-1"
-              >
-                <span
-                  class="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-medium border border-emerald-200"
-                >
-                  <span
-                    class="w-2 h-2 rounded-full bg-emerald-500 green-dot inline-block"
-                  ></span>
-                  進行中
-                </span>
-                <span id="current-date-range" class="font-medium text-textmuted"
-                  >2026/10/19 ~ 2026/10/25</span
-                >
-                <button
-                  onclick="editDateRange()"
-                  class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] px-2 py-0.5 rounded-md border border-slate-200 transition-colors shadow-none ml-1"
-                >
-                  編輯
-                </button>
-              </div>
-              <div class="flex items-baseline space-x-1.5 mt-2">
-                <span
-                  id="total-minutes"
-                  class="text-4xl font-black tracking-tight"
-                  >0</span
-                >
-                <span class="text-sm font-semibold text-textmuted">分鐘</span>
-                <span id="total-hours-sub" class="text-xs text-textmuted ml-1"
-                  >(0.0 小時)</span
-                >
-              </div>
-            </div>
-            <!-- 圓形進度百分比視覺 -->
-            <div class="relative w-16 h-16 flex items-center justify-center">
-              <svg class="w-full h-full transform -rotate-90">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="5"
-                  class="text-bordercolor fill-none"
-                ></circle>
-                <circle
-                  id="progress-ring"
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="5"
-                  class="text-accent fill-none transition-all duration-500"
-                  stroke-dasharray="175.93"
-                  stroke-dashoffset="175.93"
-                  stroke-linecap="round"
-                ></circle>
-              </svg>
-              <span id="progress-percent" class="absolute text-xs font-bold"
-                >0%</span
-              >
+      <!-- 頁籤分頁按鈕 -->
+      <div class="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200">
+        <button id="tabCurrentBtn" onclick="switchTab('current')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-white text-slate-800 shadow-sm">
+          本週累計
+        </button>
+        <button id="tabHistoryBtn" onclick="switchTab('history')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700">
+          歷史歸檔 <span id="historyBadge" class="ml-0.5 px-1.5 py-0.2 bg-slate-200 text-slate-600 rounded-full text-[10px]">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要內容區域 -->
+  <main class="max-w-xl mx-auto px-4 mt-4 sm:mt-6 space-y-5">
+
+    <!-- VIEW 1: 本週紀錄與目標 (Current View) -->
+    <div id="viewCurrent" class="space-y-5">
+
+      <!-- 本週概況卡片 -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>進行中
+            </span>
+            <span id="currentWeekRangeDisplay" class="text-xs sm:text-sm font-semibold text-slate-600">2026/10/25 ~ 2026/10/31</span>
+          </div>
+          <button onclick="openDateRangeModal()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-medium transition active:scale-95 border border-slate-200">
+            編輯日期
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between my-2">
+          <div>
+            <div class="flex items-baseline space-x-1.5">
+              <span id="currentTotalMinutes" class="text-4xl font-extrabold text-slate-900 tracking-tight">0</span>
+              <span class="text-sm font-medium text-slate-500">分鐘</span>
+              <span id="currentTotalHours" class="text-xs text-slate-400 font-normal ml-1">(0.0 小時)</span>
             </div>
           </div>
-
-          <!-- 目標與差額 -->
-          <div
-            class="mt-4 pt-3 border-t border-bordercolor flex justify-between items-center text-xs"
-          >
-            <div class="flex items-center space-x-1.5 text-textmuted">
-              <span
-                >目標：<strong
-                  id="target-display"
-                  class="text-primary font-bold"
-                  >150</strong
-                >
-                分鐘</span
-              >
-              <button
-                onclick="editTarget()"
-                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] px-2 py-0.5 rounded-md border border-slate-200 transition-colors shadow-none ml-1"
-              >
-                編輯
-              </button>
-            </div>
-            <div id="target-status" class="font-medium text-textmuted">
-              還差 150 分鐘
-            </div>
-          </div>
-
-          <!-- 進度條 -->
-          <div
-            class="w-full bg-bordercolor/60 h-2 rounded-full mt-2 overflow-hidden"
-          >
-            <div
-              id="progress-bar"
-              class="bg-accent h-full rounded-full transition-all duration-500"
-              style="width: 0%"
-            ></div>
-          </div>
-
-          <!-- 心率區間分佈摘要 -->
-          <div class="mt-4 pt-3 border-t border-bordercolor/60">
-            <div
-              class="flex justify-between items-center text-xs text-textmuted mb-1.5"
-            >
-              <span>心率區間分佈</span>
-              <span id="zone-summary-text" class="font-medium text-primary"
-                >尚無記錄</span
-              >
-            </div>
-            <div
-              id="zone-mini-bars"
-              class="w-full bg-bordercolor/50 h-1.5 rounded-full flex overflow-hidden"
-            >
-              <!-- 動態生成分佈條 -->
-            </div>
-          </div>
-
-          <!-- 歸檔新的一週按鈕 -->
-          <div class="mt-4 pt-3 border-t border-bordercolor flex justify-end">
-            <button
-              onclick="archiveCurrentWeek()"
-              class="bg-[#0F172A] text-white text-xs font-medium px-4 py-2 rounded-xl hover:bg-slate-800 transition-all shadow-sm active:scale-95 flex items-center space-x-1.5"
-            >
-              <span>開始新的一週 (存檔)</span>
-            </button>
+          
+          <!-- 環形進度 / 百分比 -->
+          <div class="relative w-16 h-16 flex items-center justify-center">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path class="text-slate-100" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="progressCircle" class="text-sky-500 transition-all duration-500 ease-out" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <span id="progressPercent" class="absolute text-xs font-bold text-slate-700">0%</span>
           </div>
         </div>
 
-        <!-- 新增運動記錄卡片 -->
-        <div
-          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm space-y-4"
-        >
-          <h2
-            class="font-bold text-sm tracking-tight flex items-center space-x-2 text-primary"
-          >
-            <span>新增運動記錄</span>
-          </h2>
+        <!-- 目標對比條 -->
+        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+          <div class="flex items-center space-x-2">
+            <span class="text-slate-500">目標：<strong id="targetMinutesDisplay" class="text-slate-800 font-semibold">150</strong> 分鐘</span>
+            <button onclick="openTargetModal()" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs font-medium border border-slate-200 transition">
+              編輯
+            </button>
+          </div>
+          <span id="remainingMinutesDisplay" class="text-slate-500 font-medium">還差 150 分鐘</span>
+        </div>
 
+        <!-- Zone 心率分佈列 -->
+        <div class="mt-4 space-y-2">
+          <div class="flex justify-between text-xs font-medium text-slate-500">
+            <span>心率區間分佈</span>
+            <span id="zoneDistributionSummary">尚無記錄</span>
+          </div>
+          <div class="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex" id="zoneProgressBar">
+            <div id="zone1Bar" class="bg-slate-400 h-full transition-all duration-300" style="width: 0%" title="Zone 1"></div>
+            <div id="zone2Bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%" title="Zone 2"></div>
+            <div id="zone3Bar" class="bg-amber-500 h-full transition-all duration-300" style="width: 0%" title="Zone 3"></div>
+            <div id="zone4Bar" class="bg-orange-500 h-full transition-all duration-300" style="width: 0%" title="Zone 4"></div>
+            <div id="zone5Bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%" title="Zone 5"></div>
+          </div>
+          <!-- 圖例 -->
+          <div class="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500 pt-1">
+            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Zone 2 (燃脂)</div>
+            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>Zone 3 (有氧)</div>
+            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-400"></span>其他 Zone</div>
+          </div>
+        </div>
+
+        <!-- 存檔結算按鈕 -->
+        <div class="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+          <button onclick="archiveCurrentWeek()" class="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition active:scale-95 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-box-archive"></i>
+            <span>開始新的一週 (存檔結算)</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 新增運動紀錄 Form -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+          <i class="fa-solid fa-circle-plus text-sky-500"></i>
+          <span>新增運動紀錄</span>
+        </h2>
+
+        <form id="addRecordForm" onsubmit="handleAddRecord(event)" class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
-            <!-- 星期幾 (加寬邊距 custom-select) -->
+            <!-- 日期選擇器下拉 -->
             <div>
-              <label class="block text-xs font-semibold text-textmuted mb-1"
-                >星期</label
-              >
-              <select
-                id="input-day"
-                class="custom-select w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
-              >
-                <option value="" disabled selected hidden>請選擇...</option>
-                <option value="星期一">星期一</option>
-                <option value="星期二">星期二</option>
-                <option value="星期三">星期三</option>
-                <option value="星期四">星期四</option>
-                <option value="星期五">星期五</option>
-                <option value="星期六">星期六</option>
-                <option value="星期日">星期日</option>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">日期</label>
+              <select id="recordDateSelect" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-800">
+                <!-- JS 動態生成該週 7 天選項 -->
               </select>
             </div>
 
-            <!-- 運動種類 (加寬邊距 custom-select) -->
+            <!-- 運動種類 -->
             <div>
-              <label class="block text-xs font-semibold text-textmuted mb-1"
-                >運動種類</label
-              >
-              <select
-                id="input-type"
-                class="custom-select w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
-              >
-                <option value="" disabled selected hidden>請選擇...</option>
-                <option value="跑步">跑步</option>
-                <option value="騎車">騎車</option>
-                <option value="快走">快走</option>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">運動種類</label>
+              <select id="recordTypeSelect" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-800">
+                <option value="" disabled selected>請選擇...</option>
+                <option value="慢跑/超慢跑">慢跑 / 超慢跑</option>
+                <option value="快走/斜坡走">快走 / 斜坡走</option>
+                <option value="單車/飛輪">單車 / 飛輪</option>
                 <option value="游泳">游泳</option>
-                <option value="爬坡">爬坡</option>
-                <option value="HIIT">HIIT</option>
-                <option value="跳繩">跳繩</option>
-                <option value="其他">其他</option>
+                <option value="划船機/橢圓機">划船機 / 橢圓機</option>
+                <option value="重量訓練">重量訓練</option>
+                <option value="高強度間歇(HIIT)">高強度間歇 (HIIT)</option>
+                <option value="其他運動">其他運動</option>
               </select>
             </div>
           </div>
 
-          <!-- 心率區間 (加寬邊距 custom-select) -->
+          <!-- 心率區間 Zone -->
           <div>
-            <label class="block text-xs font-semibold text-textmuted mb-1"
-              >心率區間 (Zone)</label
-            >
-            <select
-              id="input-zone"
-              class="custom-select w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
-            >
-              <option value="" disabled selected hidden>請選擇...</option>
-              <option value="Zone 1">Zone 1 (暖身/恢復)</option>
-              <option value="Zone 2">Zone 2 (燃脂/基礎有氧)</option>
-              <option value="Zone 3">Zone 3 (耐力/有氧)</option>
-              <option value="Zone 4">Zone 4 (無氧/閾值)</option>
-              <option value="Zone 5">Zone 5 (極限/VO2 Max)</option>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">心率區間 (Zone)</label>
+            <select id="recordZoneSelect" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-800">
+              <option value="" disabled selected>請選擇...</option>
+              <option value="Zone 1">Zone 1 (熱身恢復 / &lt;60% Max HR)</option>
+              <option value="Zone 2">Zone 2 (最佳燃脂 / 60-70% Max HR)</option>
+              <option value="Zone 3">Zone 3 (有氧耐力 / 70-80% Max HR)</option>
+              <option value="Zone 4">Zone 4 (無氧閾值 / 80-90% Max HR)</option>
+              <option value="Zone 5">Zone 5 (極限爆發 / 90-100% Max HR)</option>
             </select>
           </div>
 
-          <!-- 時長 (分鐘) -->
+          <!-- 時長與快速加總按鈕 -->
           <div>
-            <div class="flex justify-between items-center mb-1">
-              <label class="text-xs font-semibold text-textmuted"
-                >時長 (分鐘)</label
-              >
-              <!-- 快速增加按鈕 -->
-              <div class="flex space-x-1">
-                <button
-                  type="button"
-                  onclick="addMinutes(15)"
-                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
-                >
-                  +15
-                </button>
-                <button
-                  type="button"
-                  onclick="addMinutes(30)"
-                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
-                >
-                  +30
-                </button>
-                <button
-                  type="button"
-                  onclick="addMinutes(45)"
-                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
-                >
-                  +45
-                </button>
-                <button
-                  type="button"
-                  onclick="addMinutes(60)"
-                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
-                >
-                  +60
-                </button>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold text-slate-600">時長 (分鐘)</label>
+              <div class="flex gap-1">
+                <button type="button" onclick="quickAddMinutes(15)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs border border-slate-200">+15</button>
+                <button type="button" onclick="quickAddMinutes(30)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs border border-slate-200">+30</button>
+                <button type="button" onclick="quickAddMinutes(45)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs border border-slate-200">+45</button>
+                <button type="button" onclick="quickAddMinutes(60)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs border border-slate-200">+60</button>
               </div>
             </div>
-            <input
-              type="number"
-              id="input-duration"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              placeholder="例如：30"
-              class="w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
+            <!-- 指定 iOS 數字鍵盤 inputmode="numeric" / pattern="[0-9]*" -->
+            <input type="number" id="recordMinutesInput" inputmode="numeric" pattern="[0-9]*" min="1" max="1000" placeholder="例如：30" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-800">
           </div>
 
           <!-- 備註 -->
           <div>
-            <label class="block text-xs font-semibold text-textmuted mb-1"
-              >備註 (選填)</label
-            >
-            <input
-              type="text"
-              id="input-note"
-              placeholder="例如：坡度 6%、平均心率 138"
-              class="w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
+            <label class="block text-xs font-semibold text-slate-600 mb-1">備註 (選填)</label>
+            <input type="text" id="recordNoteInput" placeholder="例如：坡度 6%、平均心率 138" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-800">
           </div>
 
           <!-- 送出按鈕 -->
-          <button
-            onclick="addRecord()"
-            class="w-full bg-accent text-white text-xs font-semibold py-3 rounded-xl hover:bg-blue-600 transition-all shadow-sm active:scale-98"
-          >
-            + 加入累計記錄
+          <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-xl text-sm shadow-md transition duration-200 active:scale-[0.99] flex items-center justify-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>加入運動紀錄</span>
           </button>
-        </div>
+        </form>
+      </section>
 
-        <!-- 本週明細列表 -->
-        <div
-          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm space-y-3"
-        >
-          <h3
-            class="font-bold text-xs tracking-tight text-textmuted uppercase tracking-wider"
-          >
-            本週運動明細
-          </h3>
-          <div id="records-list" class="space-y-2.5">
-            <!-- 動態載入記錄 -->
-          </div>
-        </div>
-      </div>
+      <!-- 本週運動明細列表 -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-3">
+        <h2 class="font-bold text-slate-800 text-base flex items-center justify-between">
+          <span>本週紀錄明細</span>
+          <span id="recordsCountBadge" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">0 筆</span>
+        </h2>
 
-      <!-- 區塊：歷史歸檔 -->
-      <div id="section-history" class="space-y-4 hidden">
-        <div
-          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm space-y-4"
-        >
-          <div class="flex justify-between items-center">
-            <h2 class="font-bold text-sm tracking-tight text-primary">
-              歷史週紀錄歸檔
-            </h2>
-            <span id="history-total-weeks" class="text-xs text-textmuted"
-              >共 0 週紀錄</span
-            >
-          </div>
-          <div id="history-list" class="space-y-3">
-            <!-- 動態載入歷史紀錄 -->
-          </div>
+        <div id="recordsList" class="space-y-2.5">
+          <!-- 紀錄動態渲染區域 -->
+        </div>
+      </section>
+
+    </div>
+
+    <!-- VIEW 2: 歷史歸檔 View -->
+    <div id="viewHistory" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+        <h2 class="font-bold text-slate-800 text-base mb-1">過往每週歸檔紀錄</h2>
+        <p class="text-xs text-slate-500 mb-4">回顧歷史目標達成率與運動時長累積。</p>
+        
+        <div id="historyList" class="space-y-3">
+          <!-- 歷史歸檔動態渲染 -->
         </div>
       </div>
-    </main>
+    </div>
 
-    <!-- JavaScript 邏輯 -->
-    <script>
-      // 資料結構與狀態
-      let state = {
-        currentDateRange: "2026/10/19 ~ 2026/10/25",
-        targetMinutes: 150,
-        records: [],
-        history: [],
+  </main>
+
+  <!-- MODAL 1: 編輯每週目標 (純數字鍵盤) -->
+  <div id="targetModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl space-y-4 transform transition-all">
+      <h3 class="font-bold text-slate-900 text-base">設定每週目標分鐘數</h3>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">目標分鐘數</label>
+        <!-- inputmode="numeric" 讓 iPhone 直接開啟純數字鍵盤 -->
+        <input type="number" id="targetModalInput" inputmode="numeric" pattern="[0-9]*" min="10" max="5000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-base font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeTargetModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">取消</button>
+        <button onclick="saveTargetModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-sky-500 text-white hover:bg-sky-600 transition shadow-sm">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: 選擇本週起始日期 (日曆選擇器) -->
+  <div id="dateRangeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl space-y-4 transform transition-all">
+      <h3 class="font-bold text-slate-900 text-base">選擇本週起始日期</h3>
+      <p class="text-xs text-slate-500">選擇一天的日期，系統將自動計算並設定 7 天的時間區間。</p>
+      
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">起始日期</label>
+        <input type="date" id="startDatePicker" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white">
+      </div>
+
+      <div class="p-3 bg-sky-50 rounded-xl border border-sky-100 text-xs text-sky-800 space-y-1">
+        <span class="font-medium block">自動生成時間區間：</span>
+        <span id="calculatedRangePreview" class="font-bold">2026/10/25 ~ 2026/10/31</span>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-1">
+        <button onclick="closeDateRangeModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">取消</button>
+        <button onclick="saveDateRangeModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-sky-500 text-white hover:bg-sky-600 transition shadow-sm">確定更新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript 邏輯控制 -->
+  <script>
+    // 預設資料結構
+    const DEFAULT_TARGET = 150;
+    
+    // 初始化應用程式 State
+    let appState = {
+      targetMinutes: DEFAULT_TARGET,
+      startDate: '', // YYYY-MM-DD
+      endDate: '',   // YYYY-MM-DD
+      records: [],   // { id, dateStr, dayOfWeek, type, zone, minutes, note, timestamp }
+      history: []    // [ { id, rangeStr, targetMinutes, totalMinutes, records, archivedAt } ]
+    };
+
+    // 頁面載入初始化
+    window.onload = function() {
+      loadStateFromStorage();
+      
+      // 如果是第一次使用，自動初始化本週（預設從今天或當前週日/週一開始）
+      if (!appState.startDate) {
+        initDefaultWeek(new Date());
+      }
+      
+      // 綁定日期選擇器監聽事件，同步預覽區間
+      const picker = document.getElementById('startDatePicker');
+      picker.addEventListener('change', function(e) {
+        if (e.target.value) {
+          const range = calculate7DaysRange(e.target.value);
+          document.getElementById('calculatedRangePreview').innerText = range.rangeStr;
+        }
+      });
+
+      renderApp();
+    };
+
+    // 從 LocalStorage 載入資料
+    function loadStateFromStorage() {
+      const saved = localStorage.getItem('weekly_fit_state_v2');
+      if (saved) {
+        try {
+          appState = JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse state:', e);
+        }
+      }
+    }
+
+    // 儲存至 LocalStorage
+    function saveStateToStorage() {
+      localStorage.setItem('weekly_fit_state_v2', JSON.stringify(appState));
+    }
+
+    // 計算 7 天的時間區間 (傳入 YYYY-MM-DD string)
+    function calculate7DaysRange(startDateString) {
+      const start = new Date(startDateString);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+
+      const formatDate = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}/${m}/${day}`;
       };
 
-      // 初始化載入 LocalStorage
-      function loadData() {
-        const saved = localStorage.getItem("cardio_pulse_data");
-        if (saved) {
-          try {
-            state = JSON.parse(saved);
-          } catch (e) {
-            console.error("載入資料失敗", e);
-          }
+      const startFormatted = formatDate(start);
+      const endFormatted = formatDate(end);
+
+      return {
+        startIso: startDateString,
+        endIso: end.toISOString().split('T')[0],
+        rangeStr: `${startFormatted} ~ ${endFormatted}`
+      };
+    }
+
+    // 初始化新的預設週
+    function initDefaultWeek(baseDate) {
+      const year = baseDate.getFullYear();
+      const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+      const day = String(baseDate.getDate()).padStart(2, '0');
+      const isoToday = `${year}-${month}-${day}`;
+
+      const range = calculate7DaysRange(isoToday);
+      appState.startDate = isoToday;
+      appState.endDate = range.endIso;
+      appState.records = [];
+      saveStateToStorage();
+    }
+
+    // 主渲染函式
+    function renderApp() {
+      renderCurrentOverview();
+      renderDateDropdownOptions();
+      renderRecordsList();
+      renderHistoryList();
+    }
+
+    // 渲染本週概況卡片
+    function renderCurrentOverview() {
+      const range = calculate7DaysRange(appState.startDate);
+      document.getElementById('currentWeekRangeDisplay').innerText = range.rangeStr;
+
+      // 計算總分鐘數
+      const totalMinutes = appState.records.reduce((sum, r) => sum + Number(r.minutes), 0);
+      const totalHours = (totalMinutes / 60).toFixed(1);
+
+      document.getElementById('currentTotalMinutes').innerText = totalMinutes;
+      document.getElementById('currentTotalHours').innerText = `(${totalHours} 小時)`;
+      document.getElementById('targetMinutesDisplay').innerText = appState.targetMinutes;
+
+      // 剩餘分鐘數
+      const remaining = appState.targetMinutes - totalMinutes;
+      const remainingElem = document.getElementById('remainingMinutesDisplay');
+      if (remaining > 0) {
+        remainingElem.innerText = `還差 ${remaining} 分鐘`;
+        remainingElem.className = 'text-slate-500 font-medium';
+      } else {
+        remainingElem.innerText = `已達標 (${Math.abs(remaining)} 分鐘)`;
+        remainingElem.className = 'text-emerald-600 font-bold';
+      }
+
+      // 進度百分比
+      const percent = appState.targetMinutes > 0 ? Math.min(Math.round((totalMinutes / appState.targetMinutes) * 100), 100) : 0;
+      document.getElementById('progressPercent').innerText = `${percent}%`;
+      document.getElementById('progressCircle').setAttribute('stroke-dasharray', `${percent}, 100`);
+
+      // 渲染 Zone 心率分佈條
+      renderZoneBar(totalMinutes);
+    }
+
+    // 心率區間比例條渲染
+    function renderZoneBar(totalMinutes) {
+      const zoneMinutes = { 'Zone 1': 0, 'Zone 2': 0, 'Zone 3': 0, 'Zone 4': 0, 'Zone 5': 0 };
+      appState.records.forEach(r => {
+        if (zoneMinutes[r.zone] !== undefined) {
+          zoneMinutes[r.zone] += Number(r.minutes);
         }
-        render();
+      });
+
+      const getWidth = (min) => totalMinutes > 0 ? `${(min / totalMinutes) * 100}%` : '0%';
+
+      document.getElementById('zone1Bar').style.width = getWidth(zoneMinutes['Zone 1']);
+      document.getElementById('zone2Bar').style.width = getWidth(zoneMinutes['Zone 2']);
+      document.getElementById('zone3Bar').style.width = getWidth(zoneMinutes['Zone 3']);
+      document.getElementById('zone4Bar').style.width = getWidth(zoneMinutes['Zone 4']);
+      document.getElementById('zone5Bar').style.width = getWidth(zoneMinutes['Zone 5']);
+
+      const summaryElem = document.getElementById('zoneDistributionSummary');
+      if (totalMinutes === 0) {
+        summaryElem.innerText = '尚無記錄';
+      } else {
+        summaryElem.innerText = `Zone 2: ${zoneMinutes['Zone 2']}分 / Zone 3: ${zoneMinutes['Zone 3']}分`;
+      }
+    }
+
+    // 渲染「新增運動紀錄」中的「日期下拉選單」
+    function renderDateDropdownOptions() {
+      const selectElem = document.getElementById('recordDateSelect');
+      selectElem.innerHTML = '';
+
+      const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+      const start = new Date(appState.startDate);
+
+      for (let i = 0; i < 7; i++) {
+        const cur = new Date(start);
+        cur.setDate(cur.getDate() + i);
+
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const d = String(cur.getDate()).padStart(2, '0');
+        const dayOfWeek = dayNames[cur.getDay()];
+
+        // 格式化顯示：2026/10/25 (日)
+        const dateDisplay = `${y}/${m}/${d} (${dayOfWeek})`;
+        const optionVal = `${y}/${m}/${d}`;
+
+        const option = document.createElement('option');
+        option.value = optionVal;
+        option.dataset.dayName = dayOfWeek;
+        option.innerText = dateDisplay;
+
+        selectElem.appendChild(option);
+      }
+    }
+
+    // 新增紀錄處理
+    function handleAddRecord(e) {
+      e.preventDefault();
+
+      const dateSelect = document.getElementById('recordDateSelect');
+      const selectedOption = dateSelect.options[dateSelect.selectedIndex];
+      
+      const dateStr = dateSelect.value;
+      const dayOfWeek = selectedOption ? selectedOption.dataset.dayName : '';
+      const type = document.getElementById('recordTypeSelect').value;
+      const zone = document.getElementById('recordZoneSelect').value;
+      const minutes = parseInt(document.getElementById('recordMinutesInput').value, 10);
+      const note = document.getElementById('recordNoteInput').value.trim();
+
+      if (!type || !zone || !minutes || minutes <= 0) {
+        alert('請填寫完整的運動資訊');
+        return;
       }
 
-      function saveData() {
-        localStorage.setItem("cardio_pulse_data", JSON.stringify(state));
+      const newRecord = {
+        id: 'rec_' + Date.now(),
+        dateStr,
+        dayOfWeek,
+        type,
+        zone,
+        minutes,
+        note,
+        timestamp: Date.now()
+      };
+
+      appState.records.unshift(newRecord); // 最新紀錄排前面
+      saveStateToStorage();
+      renderApp();
+
+      // 清空部分輸入
+      document.getElementById('recordMinutesInput').value = '';
+      document.getElementById('recordNoteInput').value = '';
+    }
+
+    // 快速加總分鐘按鈕
+    function quickAddMinutes(val) {
+      const input = document.getElementById('recordMinutesInput');
+      const current = parseInt(input.value, 10) || 0;
+      input.value = current + val;
+    }
+
+    // 渲染本週運動明細
+    function renderRecordsList() {
+      const container = document.getElementById('recordsList');
+      const badge = document.getElementById('recordsCountBadge');
+      container.innerHTML = '';
+
+      badge.innerText = `${appState.records.length} 筆`;
+
+      if (appState.records.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <i class="fa-solid fa-person-running text-slate-300 text-3xl mb-2"></i>
+            <p class="text-xs text-slate-400 font-medium">本週尚無運動紀錄，點擊上方新增吧！</p>
+          </div>
+        `;
+        return;
       }
 
-      // 快速增加時長
-      function addMinutes(mins) {
-        const input = document.getElementById("input-duration");
-        const current = parseInt(input.value) || 0;
-        input.value = current + mins;
-      }
+      appState.records.forEach(rec => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/70 transition';
 
-      // 新增記錄
-      function addRecord() {
-        const day = document.getElementById("input-day").value;
-        const type = document.getElementById("input-type").value;
-        const zone = document.getElementById("input-zone").value;
-        const duration = parseInt(
-          document.getElementById("input-duration").value,
-        );
-        const note = document.getElementById("input-note").value.trim();
+        // 根據 Zone 著色
+        let zoneBadgeClass = 'bg-slate-200 text-slate-700';
+        if (rec.zone === 'Zone 2') zoneBadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+        if (rec.zone === 'Zone 3') zoneBadgeClass = 'bg-amber-100 text-amber-800 border border-amber-200';
+        if (rec.zone === 'Zone 4') zoneBadgeClass = 'bg-orange-100 text-orange-800 border border-orange-200';
+        if (rec.zone === 'Zone 5') zoneBadgeClass = 'bg-rose-100 text-rose-800 border border-rose-200';
 
-        if (!day) {
-          alert("請選擇星期！");
+        item.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-slate-700">${rec.dateStr} (${rec.dayOfWeek})</span>
+              <span class="font-semibold text-xs sm:text-sm text-slate-900">${rec.type}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-md font-medium ${zoneBadgeClass}">${rec.zone}</span>
+            </div>
+            ${rec.note ? `<p class="text-xs text-slate-500 flex items-center gap-1"><i class="fa-regular fa-comment-dots text-[10px]"></i> ${rec.note}</p>` : ''}
+          </div>
+          <div class="flex items-center space-x-3">
+            <span class="text-sm font-extrabold text-slate-800">${rec.minutes} <span class="text-xs font-normal text-slate-500">分</span></span>
+            <button onclick="deleteRecord('${rec.id}')" class="text-slate-400 hover:text-rose-500 p-1 transition" title="刪除紀錄">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 刪除單筆紀錄
+    function deleteRecord(id) {
+      appState.records = appState.records.filter(r => r.id !== id);
+      saveStateToStorage();
+      renderApp();
+    }
+
+    // 結算並開始新的一週
+    function archiveCurrentWeek() {
+      if (appState.records.length === 0) {
+        if (!confirm('本週尚無任何運動紀錄，確定要直接歸檔並開始新的一週嗎？')) {
           return;
         }
-        if (!type) {
-          alert("請選擇運動種類！");
+      } else {
+        if (!confirm('確定要結算本週紀錄並存檔嗎？本週數據將移至「歷史歸檔」。')) {
           return;
         }
-        if (!zone) {
-          alert("請選擇心率區間！");
-          return;
-        }
-        if (!duration || duration <= 0) {
-          alert("請輸入有效的運動分鐘數！");
-          return;
-        }
-
-        const newRecord = {
-          id: Date.now(),
-          day,
-          type,
-          zone,
-          duration,
-          note,
-        };
-
-        state.records.unshift(newRecord);
-
-        // 重置輸入欄位
-        document.getElementById("input-day").value = "";
-        document.getElementById("input-type").value = "";
-        document.getElementById("input-zone").value = "";
-        document.getElementById("input-duration").value = "";
-        document.getElementById("input-note").value = "";
-
-        saveData();
-        render();
       }
 
-      // 刪除記錄
-      function deleteRecord(id) {
-        state.records = state.records.filter((r) => r.id !== id);
-        saveData();
-        render();
+      const totalMinutes = appState.records.reduce((sum, r) => sum + Number(r.minutes), 0);
+      const range = calculate7DaysRange(appState.startDate);
+
+      const historyEntry = {
+        id: 'hist_' + Date.now(),
+        rangeStr: range.rangeStr,
+        targetMinutes: appState.targetMinutes,
+        totalMinutes: totalMinutes,
+        recordsCount: appState.records.length,
+        records: [...appState.records],
+        archivedAt: new Date().toLocaleDateString('zh-TW')
+      };
+
+      appState.history.unshift(historyEntry);
+
+      // 自動推算下一週的起始日期 (目前 end 加上 1 天)
+      const nextStart = new Date(appState.endDate);
+      nextStart.setDate(nextStart.getDate() + 1);
+      
+      initDefaultWeek(nextStart);
+      renderApp();
+
+      alert('結算完成！已開啟全新一週。');
+    }
+
+    // 渲染歷史歸檔列表
+    function renderHistoryList() {
+      const container = document.getElementById('historyList');
+      const badge = document.getElementById('historyBadge');
+      container.innerHTML = '';
+
+      badge.innerText = appState.history.length;
+
+      if (appState.history.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400 text-xs">
+            尚無歷史歸檔資料
+          </div>
+        `;
+        return;
       }
 
-      // 修改目標
-      function editTarget() {
-        const newTarget = prompt(
-          "請輸入新的每週目標分鐘數：",
-          state.targetMinutes,
-        );
-        if (newTarget !== null) {
-          const parsed = parseInt(newTarget);
-          if (!isNaN(parsed) && parsed > 0) {
-            state.targetMinutes = parsed;
-            saveData();
-            render();
-          } else {
-            alert("請輸入有效的數字！");
-          }
-        }
+      appState.history.forEach(item => {
+        const percent = item.targetMinutes > 0 ? Math.round((item.totalMinutes / item.targetMinutes) * 100) : 0;
+        const isAchieved = percent >= 100;
+
+        const card = document.createElement('div');
+        card.className = 'p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700">${item.rangeStr}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isAchieved ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">
+              ${isAchieved ? '達標 ' + percent + '%' : '完成 ' + percent + '%'}
+            </span>
+          </div>
+          <div class="flex justify-between items-baseline text-xs text-slate-600">
+            <span>累積：<strong class="text-slate-900 font-bold text-sm">${item.totalMinutes}</strong> / ${item.targetMinutes} 分鐘</span>
+            <span class="text-[11px] text-slate-400">${item.recordsCount} 筆運動紀錄</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // MODAL - 目標分鐘數 (純數字鍵盤)
+    function openTargetModal() {
+      document.getElementById('targetModalInput').value = appState.targetMinutes;
+      document.getElementById('targetModal').classList.remove('hidden');
+    }
+    function closeTargetModal() {
+      document.getElementById('targetModal').classList.add('hidden');
+    }
+    function saveTargetModal() {
+      const val = parseInt(document.getElementById('targetModalInput').value, 10);
+      if (val && val > 0) {
+        appState.targetMinutes = val;
+        saveStateToStorage();
+        renderApp();
+        closeTargetModal();
+      } else {
+        alert('請輸入有效的數字');
       }
+    }
 
-      // 修改日期區間
-      function editDateRange() {
-        const newRange = prompt(
-          "請輸入本週時間區間（例如：2026/10/26 ~ 2026/11/01）：",
-          state.currentDateRange,
-        );
-        if (newRange !== null && newRange.trim() !== "") {
-          state.currentDateRange = newRange.trim();
-          saveData();
-          render();
-        }
+    // MODAL - 日期區間選擇 (日曆選擇器)
+    function openDateRangeModal() {
+      document.getElementById('startDatePicker').value = appState.startDate;
+      const range = calculate7DaysRange(appState.startDate);
+      document.getElementById('calculatedRangePreview').innerText = range.rangeStr;
+      document.getElementById('dateRangeModal').classList.remove('hidden');
+    }
+    function closeDateRangeModal() {
+      document.getElementById('dateRangeModal').classList.add('hidden');
+    }
+    function saveDateRangeModal() {
+      const pickerVal = document.getElementById('startDatePicker').value;
+      if (pickerVal) {
+        const range = calculate7DaysRange(pickerVal);
+        appState.startDate = range.startIso;
+        appState.endDate = range.endIso;
+        saveStateToStorage();
+        renderApp();
+        closeDateRangeModal();
+      } else {
+        alert('請選擇有效的日期');
       }
+    }
 
-      // 開始新的一週 (歸檔)
-      function archiveCurrentWeek() {
-        if (state.records.length === 0) {
-          alert("本週尚無任何運動記錄，無需歸檔！");
-          return;
-        }
+    // 頁籤切換
+    function switchTab(tab) {
+      const currentView = document.getElementById('viewCurrent');
+      const historyView = document.getElementById('viewHistory');
+      const tabCurrentBtn = document.getElementById('tabCurrentBtn');
+      const tabHistoryBtn = document.getElementById('tabHistoryBtn');
 
-        const totalMins = state.records.reduce((acc, r) => acc + r.duration, 0);
-
-        const archiveItem = {
-          id: Date.now(),
-          dateRange: state.currentDateRange,
-          totalMinutes: totalMins,
-          targetMinutes: state.targetMinutes,
-          achieved: totalMins >= state.targetMinutes,
-          records: [...state.records],
-        };
-
-        state.history.unshift(archiveItem);
-        state.records = []; // 清空當週記錄
-
-        // 自動推進下週預設日期字串
-        state.currentDateRange = "新的一週記錄區間";
-
-        saveData();
-        render();
-        switchTab("history");
+      if (tab === 'current') {
+        currentView.classList.remove('hidden');
+        historyView.classList.add('hidden');
+        tabCurrentBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-white text-slate-800 shadow-sm';
+        tabHistoryBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700';
+      } else {
+        currentView.classList.add('hidden');
+        historyView.classList.remove('hidden');
+        tabHistoryBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-white text-slate-800 shadow-sm';
+        tabCurrentBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700';
       }
-
-      // 刪除歷史歸檔
-      function deleteHistory(id) {
-        if (confirm("確定要刪除這筆歷史週紀錄嗎？")) {
-          state.history = state.history.filter((h) => h.id !== id);
-          saveData();
-          render();
-        }
-      }
-
-      // 頁籤切換
-      function switchTab(tab) {
-        const currentSec = document.getElementById("section-current");
-        const historySec = document.getElementById("section-history");
-        const btnCurrent = document.getElementById("tab-current");
-        const btnHistory = document.getElementById("tab-history");
-
-        if (tab === "current") {
-          currentSec.classList.remove("hidden");
-          historySec.classList.add("hidden");
-          btnCurrent.className =
-            "px-3 py-1.5 rounded-lg bg-white shadow-sm text-primary transition-all";
-          btnHistory.className =
-            "px-3 py-1.5 rounded-lg text-textmuted transition-all";
-        } else {
-          currentSec.classList.add("hidden");
-          historySec.classList.remove("hidden");
-          btnHistory.className =
-            "px-3 py-1.5 rounded-lg bg-white shadow-sm text-primary transition-all";
-          btnCurrent.className =
-            "px-3 py-1.5 rounded-lg text-textmuted transition-all";
-        }
-      }
-
-      // 畫面渲染
-      function render() {
-        // 計算總分鐘數
-        const totalMins = state.records.reduce((acc, r) => acc + r.duration, 0);
-        const totalHours = (totalMins / 60).toFixed(1);
-
-        document.getElementById("total-minutes").innerText = totalMins;
-        document.getElementById("total-hours-sub").innerText =
-          `(${totalHours} 小時)`;
-        document.getElementById("target-display").innerText =
-          state.targetMinutes;
-        document.getElementById("current-date-range").innerText =
-          state.currentDateRange;
-
-        // 進度條與圓形環
-        const percent = Math.min(
-          Math.round((totalMins / state.targetMinutes) * 100),
-          100,
-        );
-        document.getElementById("progress-percent").innerText = `${percent}%`;
-        document.getElementById("progress-bar").style.width = `${percent}%`;
-
-        const circleCircumference = 175.93;
-        const strokeOffset =
-          circleCircumference - (percent / 100) * circleCircumference;
-        document.getElementById("progress-ring").style.strokeDashoffset =
-          strokeOffset;
-
-        // 差額提示
-        const diff = state.targetMinutes - totalMins;
-        const statusEl = document.getElementById("target-status");
-        if (diff > 0) {
-          statusEl.innerText = `還差 ${diff} 分鐘`;
-          statusEl.className = "font-medium text-textmuted";
-        } else {
-          statusEl.innerText = `已達成每週目標！`;
-          statusEl.className = "font-bold text-emerald-600";
-        }
-
-        // 心率區間統計
-        renderZoneSummary();
-
-        // 渲染本週明細
-        const listEl = document.getElementById("records-list");
-        if (state.records.length === 0) {
-          listEl.innerHTML = `<p class="text-xs text-textmuted text-center py-4">本週還沒有新增運動記錄，趕快開始吧！</p>`;
-        } else {
-          listEl.innerHTML = state.records
-            .map(
-              (r) => `
-                    <div class="flex justify-between items-center bg-bglight border border-bordercolor/60 rounded-xl px-3.5 py-2.5">
-                        <div class="space-y-0.5">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs font-bold text-primary">${r.day}</span>
-                                <span class="text-xs font-semibold text-accent bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">${r.type}</span>
-                                <span class="text-[10px] font-medium bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">${r.zone}</span>
-                            </div>
-                            ${r.note ? `<p class="text-[11px] text-textmuted">${r.note}</p>` : ""}
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-xs font-bold text-primary">${r.duration} 分鐘</span>
-                            <button onclick="deleteRecord(${r.id})" class="text-textmuted hover:text-red-500 text-xs px-1.5 py-1 transition-colors">✕</button>
-                        </div>
-                    </div>
-                `,
-            )
-            .join("");
-        }
-
-        // 渲染歷史歸檔
-        const historyListEl = document.getElementById("history-list");
-        document.getElementById("history-count").innerText =
-          state.history.length;
-        document.getElementById("history-total-weeks").innerText =
-          `共 ${state.history.length} 週紀錄`;
-
-        if (state.history.length === 0) {
-          historyListEl.innerHTML = `<p class="text-xs text-textmuted text-center py-6">尚無歷史歸檔記錄。</p>`;
-        } else {
-          historyListEl.innerHTML = state.history
-            .map(
-              (h) => `
-                    <div class="bg-bglight border border-bordercolor rounded-xl p-4 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="text-xs font-bold text-primary block">${h.dateRange}</span>
-                                <span class="text-[11px] text-textmuted">總計：<strong>${h.totalMinutes}</strong> 分鐘 (目標 ${h.targetMinutes}m)</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${h.achieved ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}">
-                                    ${h.achieved ? "達標" : "未達標"}
-                                </span>
-                                <button onclick="deleteHistory(${h.id})" class="text-textmuted hover:text-red-500 text-xs">✕</button>
-                            </div>
-                        </div>
-                        <div class="pt-2 border-t border-bordercolor space-y-1">
-                            ${h.records
-                              .map(
-                                (r) => `
-                                <div class="flex justify-between text-[11px] text-textmuted">
-                                    <span>${r.day} - ${r.type} (${r.zone})</span>
-                                    <span>${r.duration}m</span>
-                                </div>
-                            `,
-                              )
-                              .join("")}
-                        </div>
-                    </div>
-                `,
-            )
-            .join("");
-        }
-      }
-
-      // 計算心率區間分佈條
-      function renderZoneSummary() {
-        const zones = {
-          "Zone 1": 0,
-          "Zone 2": 0,
-          "Zone 3": 0,
-          "Zone 4": 0,
-          "Zone 5": 0,
-        };
-        let total = 0;
-        state.records.forEach((r) => {
-          if (zones[r.zone] !== undefined) {
-            zones[r.zone] += r.duration;
-            total += r.duration;
-          }
-        });
-
-        const summaryText = document.getElementById("zone-summary-text");
-        const miniBars = document.getElementById("zone-mini-bars");
-
-        if (total === 0) {
-          summaryText.innerText = "尚無記錄";
-          miniBars.innerHTML = `<div class="bg-bordercolor w-full h-full"></div>`;
-          return;
-        }
-
-        // 尋找佔比最高的主力區間
-        let maxZone = "Zone 1";
-        let maxMins = 0;
-        for (let z in zones) {
-          if (zones[z] > maxMins) {
-            maxMins = zones[z];
-            maxZone = z;
-          }
-        }
-        summaryText.innerText = `主力 ${maxZone} (${maxMins}m)`;
-
-        // 繪製顏色分佈
-        const colors = {
-          "Zone 1": "bg-slate-400",
-          "Zone 2": "bg-blue-400",
-          "Zone 3": "bg-emerald-400",
-          "Zone 4": "bg-amber-500",
-          "Zone 5": "bg-rose-500",
-        };
-
-        miniBars.innerHTML = Object.keys(zones)
-          .map((z) => {
-            const mins = zones[z];
-            const pct = total > 0 ? (mins / total) * 100 : 0;
-            if (pct === 0) return "";
-            return `<div class="${colors[z]} h-full transition-all" style="width: ${pct}%" title="${z}: ${mins}m"></div>`;
-          })
-          .join("");
-      }
-
-      // 啟動
-      window.onload = loadData;
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>
