@@ -9,14 +9,31 @@
 <link id="app-favicon" rel="icon" type="image/png" href="" />
 <link id="apple-touch-icon" rel="apple-touch-icon" href="" />
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>(function(){var t=null;try{t=localStorage.getItem("WF_THEME")}catch(e){}var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)})()</script>
 <style>
-  body{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(96px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));-webkit-tap-highlight-color:transparent}
+  body{padding-top:max(16px,calc(env(safe-area-inset-top) + 14px));padding-bottom:max(110px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));-webkit-tap-highlight-color:transparent}
   input,select{font-size:16px!important;border-radius:.75rem}
   select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:36px!important}
   .ring{transition:stroke-dashoffset .35s ease-in-out,stroke .3s;transform:rotate(-90deg);transform-origin:50% 50%}
   .sheet{transition:transform .25s ease}
   .sheet.closed{transform:translateY(100%)}
   details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
+
+  html.dark{color-scheme:dark;background:#0f172a}
+  .dark .bg-white{background:#1e293b}.dark .bg-white\/95{background:rgba(30,41,59,.95)}
+  .dark .bg-slate-50{background:#0f172a}.dark .bg-slate-100{background:#334155}.dark .bg-slate-200{background:#475569}
+  .dark .text-slate-900,.dark .text-slate-800{color:#f1f5f9}.dark .text-slate-700{color:#e2e8f0}
+  .dark .text-slate-600{color:#cbd5e1}.dark .text-slate-500{color:#94a3b8}
+  .dark .border-slate-100,.dark .border-slate-200,.dark .border-slate-200\/70{border-color:#334155}
+  .dark .border-white{border-color:#1e293b}
+  .dark .bg-sky-50{background:rgba(12,74,110,.45)}.dark .border-sky-100{border-color:#075985}
+  .dark .text-sky-600{color:#38bdf8}.dark .text-sky-900{color:#e0f2fe}.dark .text-sky-700{color:#7dd3fc}
+  .dark .bg-sky-100{background:#0c4a6e}.dark .bg-sky-300{background:#0284c7}
+  .dark .bg-amber-50{background:rgba(69,26,3,.55)}.dark .border-amber-200{border-color:#92400e}.dark .text-amber-800{color:#fcd34d}
+  .dark .bg-emerald-100{background:#064e3b}.dark .text-emerald-800{color:#6ee7b7}
+  .dark .bg-amber-100{background:#78350f}.dark .bg-orange-100{background:#7c2d12}.dark .text-orange-800{color:#fdba74}
+  .dark .bg-rose-100{background:#881337}.dark .text-rose-800{color:#fda4af}
+  .dark .ring-slate-800{--tw-ring-color:#e2e8f0}.dark .ring-bg{stroke:#334155}.dark #toast{background:#475569}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen selection:bg-sky-500 selection:text-white">
@@ -27,10 +44,7 @@
       <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sky-400"><i data-lucide="activity" class="w-6 h-6"></i></div>
       <div><h1 class="text-lg font-bold leading-none">Weekly Fit</h1><span class="text-xs text-slate-400">離線自動儲存</span></div>
     </div>
-    <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold" role="tablist">
-      <button id="tabCurrentBtn" onclick="switchTab('current')" class="px-3 py-2 rounded-lg">本週累計</button>
-      <button id="tabHistoryBtn" onclick="switchTab('history')" class="px-3 py-2 rounded-lg">歷史 <span id="historyBadge" class="ml-0.5 px-1.5 bg-slate-200 text-slate-600 rounded-full text-[10px]">0</span></button>
-    </div>
+    <button id="themeBtn" onclick="toggleTheme()" aria-label="切換深色模式" class="p-2.5 rounded-xl bg-slate-100 text-slate-600"></button>
   </header>
 </div>
 
@@ -59,7 +73,7 @@
         </div>
         <div class="relative w-20 h-20 flex items-center justify-center">
           <svg class="w-20 h-20">
-            <circle stroke="#f1f5f9" stroke-width="6" fill="transparent" r="32" cx="40" cy="40"/>
+            <circle class="ring-bg" stroke="#f1f5f9" stroke-width="6" fill="transparent" r="32" cx="40" cy="40"/>
             <circle id="progressCircle" class="ring" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round" fill="transparent" r="32" cx="40" cy="40"/>
           </svg>
           <span id="displayPercentage" class="absolute text-xs font-black"></span>
@@ -108,7 +122,13 @@
 </footer>
 
 <!-- FAB -->
-<button id="fab" onclick="openSheet()" aria-label="新增運動紀錄" class="fixed right-5 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center z-30" style="bottom:max(24px,env(safe-area-inset-bottom))"><i data-lucide="plus" class="w-7 h-7"></i></button>
+<nav class="fixed inset-x-0 bottom-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200" style="padding-bottom:env(safe-area-inset-bottom)">
+  <div class="max-w-md mx-auto grid grid-cols-3 items-center px-4">
+    <button id="navCurrent" onclick="switchTab('current')"><i data-lucide="calendar-check" class="w-6 h-6"></i>本週</button>
+    <button onclick="openSheet()" aria-label="新增運動紀錄" class="mx-auto -mt-6 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center border-4 border-white"><i data-lucide="plus" class="w-7 h-7"></i></button>
+    <button id="navHistory" onclick="switchTab('history')"><span class="relative"><i data-lucide="history" class="w-6 h-6"></i><span id="historyBadge" class="absolute -top-1 -right-4 px-1.5 bg-slate-200 text-slate-600 rounded-full text-[10px]">0</span></span>歷史</button>
+  </div>
+</nav>
 
 <!-- Add / Edit bottom sheet -->
 <div id="sheetBg" onclick="closeSheet()" class="fixed inset-0 bg-slate-900/40 z-40 hidden"></div>
@@ -162,7 +182,7 @@
   </div>
 </div>
 
-<div id="toast" class="fixed left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white text-xs rounded-xl px-4 py-3 shadow-lg items-center gap-3" style="bottom:max(90px,env(safe-area-inset-bottom))"></div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white text-xs rounded-xl px-4 py-3 shadow-lg items-center gap-3" style="bottom:calc(84px + env(safe-area-inset-bottom))"></div>
 
 <script>
 /* 內嵌圖示（不依賴外部圖示庫） */
@@ -172,6 +192,9 @@ const ICONS = {
   pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
   "trash-2": '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
   activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  "calendar-check": '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/>',
   history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
 };
 const lucide = {
@@ -369,6 +392,7 @@ function onTypeChange() {
 function openSheet(id) {
   const rec = id ? appState.records.find((r) => r.id === id) : null;
   editingId = rec ? rec.id : null;
+  if (!$("viewCurrent").offsetParent) switchTab("current");
   fillSelects(rec);
   $("inDur").value = rec ? rec.duration : ""; $("inNote").value = rec ? rec.note : "";
   $("sheetTitle").textContent = rec ? "編輯運動紀錄" : "新增運動紀錄";
@@ -408,12 +432,20 @@ function archiveCurrentWeek() {
   save(); renderApp();
 }
 function switchTab(tab) {
-  const on = "px-3 py-2 rounded-lg bg-white text-slate-900 shadow-sm", off = "px-3 py-2 rounded-lg text-slate-500";
-  $("tabCurrentBtn").className = tab === "current" ? on : off;
-  $("tabHistoryBtn").className = tab === "history" ? on : off;
   $("viewCurrent").classList.toggle("hidden", tab !== "current");
   $("viewHistory").classList.toggle("hidden", tab !== "history");
-  $("fab").classList.toggle("hidden", tab !== "current");
+  [["current", "navCurrent"], ["history", "navHistory"]].forEach(([t, id]) => {
+    $(id).className = "flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold " + (t === tab ? "text-sky-500" : "text-slate-400");
+  });
+  window.scrollTo({ top: 0 });
+}
+function updateThemeBtn() {
+  $("themeBtn").innerHTML = `<i data-lucide="${document.documentElement.classList.contains("dark") ? "sun" : "moon"}" class="w-5 h-5"></i>`;
+}
+function toggleTheme() {
+  const d = document.documentElement.classList.toggle("dark");
+  try { localStorage.setItem("WF_THEME", d ? "dark" : "light"); } catch (e) {}
+  updateThemeBtn(); lucide.createIcons();
 }
 
 /* ---------- Modals ---------- */
@@ -458,7 +490,7 @@ function generateAppIcons() {
   ctx.stroke();
   const u = cv.toDataURL("image/png"); $("apple-touch-icon").href = u; $("app-favicon").href = u;
 }
-window.addEventListener("DOMContentLoaded", () => { generateAppIcons(); load(); switchTab("current"); renderApp(); });
+window.addEventListener("DOMContentLoaded", () => { generateAppIcons(); load(); switchTab("current"); updateThemeBtn(); renderApp(); });
 </script>
 </body>
 </html>
