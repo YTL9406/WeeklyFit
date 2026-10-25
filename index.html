@@ -1,759 +1,806 @@
-<!DOCTYPE html>
-<html lang="zh-TW" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>每週有氧運動累計追蹤器</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Canvas Confetti -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" id="pwa-manifest">
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Weekly Fit - 每週有氧時間追蹤</title>
 
+    <!-- 網頁分頁圖示 (Favicon & Apple Touch Icon) -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%230F172A'/><path d='M80 50h-16l-12 36L36 14l-12 36H8' fill='none' stroke='%23FFFFFF' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%230F172A'/><path d='M80 50h-16l-12 36L36 14l-12 36H8' fill='none' stroke='%23FFFFFF' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+
+    <!-- PWA Manifest & Meta -->
+    <meta name="theme-color" content="#F8FAF9" />
+    <link rel="manifest" href="manifest.json" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        cream: {
-                            50: '#FDFBF7',
-                            100: '#F7F4EE',
-                            200: '#EFEBE1',
-                        },
-                        navy: {
-                            800: '#1E293B',
-                            900: '#0F172A',
-                            950: '#030712',
-                        },
-                        zone: {
-                            z1: '#64748B', // Gray
-                            z2: '#2563EB', // Blue
-                            z3: '#059669', // Emerald
-                            z4: '#D97706', // Amber
-                            z5: '#DC2626'  // Red
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0F172A",
+              accent: "#3B82F6",
+              bglight: "#F8FAF9",
+              cardbg: "#FFFFFF",
+              bordercolor: "#E2E8F0",
+              textmuted: "#64748B",
+            },
+          },
+        },
+      };
     </script>
     <style>
-        button, select, input { touch-action: manipulation; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .progress-ring-circle {
-            transition: stroke-dashoffset 0.5s ease-in-out;
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
+      @keyframes pulse-green {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
         }
+        50% {
+          opacity: 0.4;
+          transform: scale(0.95);
+        }
+      }
+      .green-dot {
+        animation: pulse-green 2s infinite ease-in-out;
+      }
+      /* 客製化下拉選單箭頭位置 */
+      .custom-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.1em;
+        padding-right: 2.75rem !important;
+      }
     </style>
-</head>
-<body class="bg-slate-100/80 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200 select-none pb-12 font-sans">
-
-    <!-- Top App Header -->
-    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3.5">
-        <div class="max-w-md mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2.5">
-                <div class="p-2 bg-navy-900 text-white rounded-xl shadow-sm">
-                    <i data-lucide="activity" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-base leading-tight text-slate-900 dark:text-slate-50 tracking-tight">有氧時間追蹤</h1>
-                    <span id="offline-badge" class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse"></span>
-                        <span id="network-status-text">離線可用</span>
-                    </span>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-1">
-                <button id="theme-toggle" class="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                    <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
-                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
-                </button>
-            </div>
+  </head>
+  <body
+    class="bg-bglight text-primary min-h-screen font-sans antialiased pb-12 selection:bg-blue-100"
+  >
+    <!-- 頂部導航列 -->
+    <header
+      class="sticky top-0 z-30 bg-bglight/80 backdrop-blur-md border-b border-bordercolor px-4 py-3"
+    >
+      <div class="max-w-md mx-auto flex justify-between items-center">
+        <div class="flex items-center space-x-2.5">
+          <!-- 心率波形 Logo -->
+          <div
+            class="w-9 h-9 bg-[#0F172A] text-white rounded-xl flex items-center justify-center shadow-sm p-1.5"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-full h-full"
+            >
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+          </div>
+          <div>
+            <h1
+              class="font-bold text-base tracking-tight leading-tight text-primary"
+            >
+              Weekly Fit
+            </h1>
+            <span class="text-xs text-textmuted flex items-center gap-1">
+              <span
+                class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"
+              ></span>
+              離線可用
+            </span>
+          </div>
         </div>
+        <!-- 頁籤切換 -->
+        <div class="bg-bordercolor/60 p-1 rounded-xl flex text-xs font-medium">
+          <button
+            id="tab-current"
+            onclick="switchTab('current')"
+            class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-primary transition-all"
+          >
+            本週累計
+          </button>
+          <button
+            id="tab-history"
+            onclick="switchTab('history')"
+            class="px-3 py-1.5 rounded-lg text-textmuted transition-all"
+          >
+            歷史歸檔
+            <span
+              id="history-count"
+              class="ml-0.5 bg-bordercolor px-1.5 py-0.2 rounded-full text-[10px]"
+              >0</span
+            >
+          </button>
+        </div>
+      </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-md w-full mx-auto p-4 space-y-4">
+    <!-- 主容器 -->
+    <main class="max-w-md mx-auto px-4 mt-5 space-y-5">
+      <!-- 區塊：本週累計 -->
+      <div id="section-current" class="space-y-5">
+        <!-- 儀表板總卡片 -->
+        <div
+          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm relative overflow-hidden"
+        >
+          <div class="flex justify-between items-start">
+            <div>
+              <div
+                class="flex items-center space-x-2 text-xs text-textmuted mb-1"
+              >
+                <span
+                  class="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-medium border border-emerald-200"
+                >
+                  <span
+                    class="w-2 h-2 rounded-full bg-emerald-500 green-dot inline-block"
+                  ></span>
+                  進行中
+                </span>
+                <span id="current-date-range" class="font-medium text-textmuted"
+                  >2026/10/19 ~ 2026/10/25</span
+                >
+                <button
+                  onclick="editDateRange()"
+                  class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] px-2 py-0.5 rounded-md border border-slate-200 transition-colors shadow-none ml-1"
+                >
+                  編輯
+                </button>
+              </div>
+              <div class="flex items-baseline space-x-1.5 mt-2">
+                <span
+                  id="total-minutes"
+                  class="text-4xl font-black tracking-tight"
+                  >0</span
+                >
+                <span class="text-sm font-semibold text-textmuted">分鐘</span>
+                <span id="total-hours-sub" class="text-xs text-textmuted ml-1"
+                  >(0.0 小時)</span
+                >
+              </div>
+            </div>
+            <!-- 圓形進度百分比視覺 -->
+            <div class="relative w-16 h-16 flex items-center justify-center">
+              <svg class="w-full h-full transform -rotate-90">
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  stroke="currentColor"
+                  stroke-width="5"
+                  class="text-bordercolor fill-none"
+                ></circle>
+                <circle
+                  id="progress-ring"
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  stroke="currentColor"
+                  stroke-width="5"
+                  class="text-accent fill-none transition-all duration-500"
+                  stroke-dasharray="175.93"
+                  stroke-dashoffset="175.93"
+                  stroke-linecap="round"
+                ></circle>
+              </svg>
+              <span id="progress-percent" class="absolute text-xs font-bold"
+                >0%</span
+              >
+            </div>
+          </div>
 
-        <!-- Navigation Tabs -->
-        <div class="grid grid-cols-2 gap-1 p-1 bg-slate-200/70 dark:bg-slate-900 rounded-2xl text-xs font-semibold">
-            <button id="tab-current" onclick="switchTab('current')" class="py-2.5 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                本週累計
+          <!-- 目標與差額 -->
+          <div
+            class="mt-4 pt-3 border-t border-bordercolor flex justify-between items-center text-xs"
+          >
+            <div class="flex items-center space-x-1.5 text-textmuted">
+              <span
+                >目標：<strong
+                  id="target-display"
+                  class="text-primary font-bold"
+                  >150</strong
+                >
+                分鐘</span
+              >
+              <button
+                onclick="editTarget()"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] px-2 py-0.5 rounded-md border border-slate-200 transition-colors shadow-none ml-1"
+              >
+                編輯
+              </button>
+            </div>
+            <div id="target-status" class="font-medium text-textmuted">
+              還差 150 分鐘
+            </div>
+          </div>
+
+          <!-- 進度條 -->
+          <div
+            class="w-full bg-bordercolor/60 h-2 rounded-full mt-2 overflow-hidden"
+          >
+            <div
+              id="progress-bar"
+              class="bg-accent h-full rounded-full transition-all duration-500"
+              style="width: 0%"
+            ></div>
+          </div>
+
+          <!-- 心率區間分佈摘要 -->
+          <div class="mt-4 pt-3 border-t border-bordercolor/60">
+            <div
+              class="flex justify-between items-center text-xs text-textmuted mb-1.5"
+            >
+              <span>心率區間分佈</span>
+              <span id="zone-summary-text" class="font-medium text-primary"
+                >尚無記錄</span
+              >
+            </div>
+            <div
+              id="zone-mini-bars"
+              class="w-full bg-bordercolor/50 h-1.5 rounded-full flex overflow-hidden"
+            >
+              <!-- 動態生成分佈條 -->
+            </div>
+          </div>
+
+          <!-- 歸檔新的一週按鈕 -->
+          <div class="mt-4 pt-3 border-t border-bordercolor flex justify-end">
+            <button
+              onclick="archiveCurrentWeek()"
+              class="bg-[#0F172A] text-white text-xs font-medium px-4 py-2 rounded-xl hover:bg-slate-800 transition-all shadow-sm active:scale-95 flex items-center space-x-1.5"
+            >
+              <span>開始新的一週 (存檔)</span>
             </button>
-            <button id="tab-history" onclick="switchTab('history')" class="py-2.5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                歷史歸檔 <span id="history-count-badge" class="ml-1 px-1.5 py-0.2 bg-slate-300/80 dark:bg-slate-700 rounded-full text-[10px]">0</span>
-            </button>
+          </div>
         </div>
 
-        <!-- ==================== TAB 1: CURRENT WEEK ==================== -->
-        <div id="view-current" class="space-y-4">
+        <!-- 新增運動記錄卡片 -->
+        <div
+          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm space-y-4"
+        >
+          <h2
+            class="font-bold text-sm tracking-tight flex items-center space-x-2 text-primary"
+          >
+            <span>新增運動記錄</span>
+          </h2>
 
-            <!-- Summary Dashboard Card (Clean White/Navy Style) -->
-            <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200/90 dark:border-slate-800 relative overflow-hidden">
-                <div class="flex justify-between items-start mb-4 relative z-10">
-                    <div>
-                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
-                            <span id="current-week-label">本週累計</span>
-                        </div>
-                        <div class="flex items-baseline gap-1.5">
-                            <span id="total-minutes-display" class="text-4xl font-extrabold tracking-tight text-navy-900 dark:text-slate-50">0</span>
-                            <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">分鐘</span>
-                            <span id="total-hours-display" class="text-xs text-slate-400 ml-0.5">(0.0 小時)</span>
-                        </div>
-                    </div>
-
-                    <!-- Circular Progress -->
-                    <div class="relative w-16 h-16 flex items-center justify-center">
-                        <svg class="w-full h-full" viewBox="0 0 36 36">
-                            <path class="text-slate-100 dark:text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path id="progress-circle" class="text-navy-900 dark:text-slate-200 progress-ring-circle" stroke-linecap="round" stroke-width="3.5" stroke-dasharray="100, 100" stroke-dashoffset="100" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <span id="progress-percent-text" class="absolute text-[11px] font-bold text-slate-800 dark:text-slate-200">0%</span>
-                    </div>
-                </div>
-
-                <!-- Linear Progress Bar -->
-                <div class="space-y-1.5 relative z-10">
-                    <div class="flex justify-between items-center text-xs text-slate-600 dark:text-slate-300 font-medium">
-                        <div class="flex items-center gap-1.5">
-                            <span>目標：<span id="goal-minutes-display" class="font-bold">150</span> 分鐘</span>
-                            <button id="edit-goal-btn" class="text-slate-400 hover:text-navy-900 dark:hover:text-slate-200 p-0.5 rounded transition" title="修改目標">
-                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                        <span id="remaining-minutes-display" class="text-slate-500">還差 150 分鐘</span>
-                    </div>
-                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800">
-                        <div id="progress-bar-fill" class="bg-navy-900 dark:bg-slate-200 h-full rounded-full transition-all duration-500 w-0"></div>
-                    </div>
-                </div>
-
-                <!-- Zone Breakdown Bar inside Dashboard -->
-                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                    <div class="text-[11px] font-medium text-slate-400 mb-1.5 flex justify-between">
-                        <span>心率區間分佈</span>
-                        <span id="zone-summary-text" class="text-slate-500">尚無紀錄</span>
-                    </div>
-                    <div id="zone-distribution-bar" class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden">
-                        <!-- Dynamic Zone bars fill via JS -->
-                    </div>
-                </div>
-
-                <!-- Action Footer -->
-                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
-                    <button id="quick-reset-btn" class="text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1.5 transition py-1 font-medium">
-                        <i data-lucide="archive" class="w-3.5 h-3.5 text-slate-400"></i>
-                        開始新的一週 (存檔)
-                    </button>
-                    <div id="status-tag" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-medium border border-slate-200 dark:border-slate-700">
-                        進行中
-                    </div>
-                </div>
-            </section>
-
-            <!-- Quick Add Form -->
-            <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200/80 dark:border-slate-800">
-                <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm mb-3 flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-slate-500"></i>
-                    新增運動記錄
-                </h2>
-
-                <form id="add-log-form" class="space-y-3">
-                    <!-- Day & Activity -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">星期</label>
-                            <select id="log-day" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
-                                <option value="Mon">星期一</option>
-                                <option value="Tue">星期二</option>
-                                <option value="Wed">星期三</option>
-                                <option value="Thu">星期四</option>
-                                <option value="Fri">星期五</option>
-                                <option value="Sat">星期六</option>
-                                <option value="Sun">星期日</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">運動種類</label>
-                            <select id="log-activity" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
-                                <option value="Running">跑步</option>
-                                <option value="Cycling">騎車</option>
-                                <option value="Walking">快走</option>
-                                <option value="Incline Walking">爬坡</option>
-                                <option value="Swimming">游泳</option>
-                                <option value="HIIT">HIIT</option>
-                                <option value="Jump Rope">跳繩</option>
-                                <option value="Other">其他</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Heart Rate Zone Selector -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">心率區間 (Zone)</label>
-                        <select id="log-zone" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
-                            <option value="Zone 1">Zone 1 (暖身/恢復)</option>
-                            <option value="Zone 2" selected>Zone 2 (燃脂/基礎有氧)</option>
-                            <option value="Zone 3">Zone 3 (耐力/有氧)</option>
-                            <option value="Zone 4">Zone 4 (無氧 threshold)</option>
-                            <option value="Zone 5">Zone 5 (極限/VO2 Max)</option>
-                        </select>
-                    </div>
-
-                    <!-- Duration Inputs -->
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">時長 (分鐘)</label>
-                            <div class="flex gap-1">
-                                <button type="button" onclick="setQuickDuration(15)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+15</button>
-                                <button type="button" onclick="setQuickDuration(30)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+30</button>
-                                <button type="button" onclick="setQuickDuration(45)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+45</button>
-                                <button type="button" onclick="setQuickDuration(60)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+60</button>
-                            </div>
-                        </div>
-                        <input type="number" id="log-duration" min="1" max="1440" placeholder="例如：30" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
-                    </div>
-
-                    <!-- Optional Notes -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">備註 (選填)</label>
-                        <input type="text" id="log-notes" placeholder="例如：坡度 6%、平均心率 138" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
-                    </div>
-
-                    <!-- Submit Button -->
-                    <button type="submit" class="w-full bg-navy-900 hover:bg-navy-800 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        加入累計記錄
-                    </button>
-                </form>
-            </section>
-
-            <!-- Logs Detail List -->
-            <section class="space-y-2.5">
-                <div class="flex justify-between items-center px-1">
-                    <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-                        <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
-                        本週運動明細
-                    </h2>
-                    <span id="log-count-badge" class="text-xs text-slate-500 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-full">0 筆記錄</span>
-                </div>
-
-                <div id="logs-list" class="space-y-2">
-                    <div id="empty-state" class="bg-white dark:bg-slate-900 rounded-2xl p-7 text-center border border-dashed border-slate-200 dark:border-slate-800">
-                        <i data-lucide="dumbbell" class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2"></i>
-                        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">本週尚無運動記錄</p>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- ==================== TAB 2: HISTORY ==================== -->
-        <div id="view-history" class="space-y-3 hidden">
-            <div class="flex justify-between items-center px-1">
-                <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-                    <i data-lucide="archive" class="w-4 h-4 text-slate-500"></i>
-                    歷史週紀錄與存檔
-                </h2>
-                <span class="text-xs text-slate-400">自動永久離線儲存</span>
+          <div class="grid grid-cols-2 gap-3">
+            <!-- 星期幾 (加寬邊距 custom-select) -->
+            <div>
+              <label class="block text-xs font-semibold text-textmuted mb-1"
+                >星期</label
+              >
+              <select
+                id="input-day"
+                class="custom-select w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
+              >
+                <option value="" disabled selected hidden>請選擇...</option>
+                <option value="星期一">星期一</option>
+                <option value="星期二">星期二</option>
+                <option value="星期三">星期三</option>
+                <option value="星期四">星期四</option>
+                <option value="星期五">星期五</option>
+                <option value="星期六">星期六</option>
+                <option value="星期日">星期日</option>
+              </select>
             </div>
 
-            <div id="history-list" class="space-y-3">
-                <div id="history-empty-state" class="bg-white dark:bg-slate-900 rounded-2xl p-8 text-center border border-dashed border-slate-200 dark:border-slate-800">
-                    <i data-lucide="history" class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2"></i>
-                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">尚無歷史歸檔紀錄</p>
-                    <p class="text-[11px] text-slate-400 mt-1">按下「開始新的一週」時，資料會存檔至此。</p>
-                </div>
+            <!-- 運動種類 (加寬邊距 custom-select) -->
+            <div>
+              <label class="block text-xs font-semibold text-textmuted mb-1"
+                >運動種類</label
+              >
+              <select
+                id="input-type"
+                class="custom-select w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
+              >
+                <option value="" disabled selected hidden>請選擇...</option>
+                <option value="跑步">跑步</option>
+                <option value="騎車">騎車</option>
+                <option value="快走">快走</option>
+                <option value="游泳">游泳</option>
+                <option value="爬坡">爬坡</option>
+                <option value="HIIT">HIIT</option>
+                <option value="跳繩">跳繩</option>
+                <option value="其他">其他</option>
+              </select>
             </div>
+          </div>
+
+          <!-- 心率區間 (加寬邊距 custom-select) -->
+          <div>
+            <label class="block text-xs font-semibold text-textmuted mb-1"
+              >心率區間 (Zone)</label
+            >
+            <select
+              id="input-zone"
+              class="custom-select w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
+            >
+              <option value="" disabled selected hidden>請選擇...</option>
+              <option value="Zone 1">Zone 1 (暖身/恢復)</option>
+              <option value="Zone 2">Zone 2 (燃脂/基礎有氧)</option>
+              <option value="Zone 3">Zone 3 (耐力/有氧)</option>
+              <option value="Zone 4">Zone 4 (無氧/閾值)</option>
+              <option value="Zone 5">Zone 5 (極限/VO2 Max)</option>
+            </select>
+          </div>
+
+          <!-- 時長 (分鐘) -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-semibold text-textmuted"
+                >時長 (分鐘)</label
+              >
+              <!-- 快速增加按鈕 -->
+              <div class="flex space-x-1">
+                <button
+                  type="button"
+                  onclick="addMinutes(15)"
+                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
+                >
+                  +15
+                </button>
+                <button
+                  type="button"
+                  onclick="addMinutes(30)"
+                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
+                >
+                  +30
+                </button>
+                <button
+                  type="button"
+                  onclick="addMinutes(45)"
+                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
+                >
+                  +45
+                </button>
+                <button
+                  type="button"
+                  onclick="addMinutes(60)"
+                  class="bg-bglight hover:bg-bordercolor text-primary text-[11px] font-medium px-2 py-0.5 rounded-lg border border-bordercolor transition-colors"
+                >
+                  +60
+                </button>
+              </div>
+            </div>
+            <input
+              type="number"
+              id="input-duration"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              placeholder="例如：30"
+              class="w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
+            />
+          </div>
+
+          <!-- 備註 -->
+          <div>
+            <label class="block text-xs font-semibold text-textmuted mb-1"
+              >備註 (選填)</label
+            >
+            <input
+              type="text"
+              id="input-note"
+              placeholder="例如：坡度 6%、平均心率 138"
+              class="w-full bg-bglight border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-accent/50"
+            />
+          </div>
+
+          <!-- 送出按鈕 -->
+          <button
+            onclick="addRecord()"
+            class="w-full bg-accent text-white text-xs font-semibold py-3 rounded-xl hover:bg-blue-600 transition-all shadow-sm active:scale-98"
+          >
+            + 加入累計記錄
+          </button>
         </div>
 
+        <!-- 本週明細列表 -->
+        <div
+          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm space-y-3"
+        >
+          <h3
+            class="font-bold text-xs tracking-tight text-textmuted uppercase tracking-wider"
+          >
+            本週運動明細
+          </h3>
+          <div id="records-list" class="space-y-2.5">
+            <!-- 動態載入記錄 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊：歷史歸檔 -->
+      <div id="section-history" class="space-y-4 hidden">
+        <div
+          class="bg-cardbg border border-bordercolor rounded-2xl p-5 shadow-sm space-y-4"
+        >
+          <div class="flex justify-between items-center">
+            <h2 class="font-bold text-sm tracking-tight text-primary">
+              歷史週紀錄歸檔
+            </h2>
+            <span id="history-total-weeks" class="text-xs text-textmuted"
+              >共 0 週紀錄</span
+            >
+          </div>
+          <div id="history-list" class="space-y-3">
+            <!-- 動態載入歷史紀錄 -->
+          </div>
+        </div>
+      </div>
     </main>
 
-    <!-- Goal Edit Modal -->
-    <div id="goal-modal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-xl border border-slate-200 dark:border-slate-800">
-            <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">修改每週目標</h3>
-            <div>
-                <label class="block text-xs text-slate-500 mb-1">目標時間 (分鐘)</label>
-                <input type="number" id="modal-goal-input" min="10" max="3000" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
-            </div>
-            <div class="flex gap-2">
-                <button id="cancel-goal-btn" class="w-1/2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 rounded-xl text-xs font-medium">取消</button>
-                <button id="save-goal-btn" class="w-1/2 bg-navy-900 dark:bg-slate-700 text-white py-2 rounded-xl text-xs font-medium">儲存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm Archive Modal -->
-    <div id="reset-modal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xs w-full p-5 space-y-3 shadow-xl border border-slate-200 dark:border-slate-800 text-center">
-            <div class="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-full flex items-center justify-center mx-auto">
-                <i data-lucide="archive" class="w-5 h-5"></i>
-            </div>
-            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">開啟新的一週？</h3>
-            <p class="text-xs text-slate-500 leading-relaxed">
-                本週總時間與明細將存入「歷史歸檔」，當週紀錄將歸零重新計算。
-            </p>
-            <div class="flex gap-2 pt-1">
-                <button id="cancel-reset-btn" class="w-1/2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 rounded-xl text-xs font-medium">取消</button>
-                <button id="confirm-reset-btn" class="w-1/2 bg-navy-900 dark:bg-slate-700 text-white py-2 rounded-xl text-xs font-medium">確定歸檔</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 opacity-0 pointer-events-none transition-all duration-300 z-50">
-        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
-        <span id="toast-message">更新成功</span>
-    </div>
-
-    <!-- JS Core Logic -->
+    <!-- JavaScript 邏輯 -->
     <script>
-        const STORAGE_KEY = 'aerobic_tracker_light_v3';
-        
-        let appData = {
-            weeklyGoal: 150,
-            currentWeekStartDate: null,
-            logs: [],
-            history: [],
-            darkMode: false
+      // 資料結構與狀態
+      let state = {
+        currentDateRange: "2026/10/19 ~ 2026/10/25",
+        targetMinutes: 150,
+        records: [],
+        history: [],
+      };
+
+      // 初始化載入 LocalStorage
+      function loadData() {
+        const saved = localStorage.getItem("cardio_pulse_data");
+        if (saved) {
+          try {
+            state = JSON.parse(saved);
+          } catch (e) {
+            console.error("載入資料失敗", e);
+          }
+        }
+        render();
+      }
+
+      function saveData() {
+        localStorage.setItem("cardio_pulse_data", JSON.stringify(state));
+      }
+
+      // 快速增加時長
+      function addMinutes(mins) {
+        const input = document.getElementById("input-duration");
+        const current = parseInt(input.value) || 0;
+        input.value = current + mins;
+      }
+
+      // 新增記錄
+      function addRecord() {
+        const day = document.getElementById("input-day").value;
+        const type = document.getElementById("input-type").value;
+        const zone = document.getElementById("input-zone").value;
+        const duration = parseInt(
+          document.getElementById("input-duration").value,
+        );
+        const note = document.getElementById("input-note").value.trim();
+
+        if (!day) {
+          alert("請選擇星期！");
+          return;
+        }
+        if (!type) {
+          alert("請選擇運動種類！");
+          return;
+        }
+        if (!zone) {
+          alert("請選擇心率區間！");
+          return;
+        }
+        if (!duration || duration <= 0) {
+          alert("請輸入有效的運動分鐘數！");
+          return;
+        }
+
+        const newRecord = {
+          id: Date.now(),
+          day,
+          type,
+          zone,
+          duration,
+          note,
         };
 
-        const activityNames = {
-            'Running': '跑步',
-            'Cycling': '騎車',
-            'Walking': '快走',
-            'Incline Walking': '爬坡',
-            'Swimming': '游泳',
-            'HIIT': 'HIIT',
-            'Jump Rope': '跳繩',
-            'Other': '其他'
+        state.records.unshift(newRecord);
+
+        // 重置輸入欄位
+        document.getElementById("input-day").value = "";
+        document.getElementById("input-type").value = "";
+        document.getElementById("input-zone").value = "";
+        document.getElementById("input-duration").value = "";
+        document.getElementById("input-note").value = "";
+
+        saveData();
+        render();
+      }
+
+      // 刪除記錄
+      function deleteRecord(id) {
+        state.records = state.records.filter((r) => r.id !== id);
+        saveData();
+        render();
+      }
+
+      // 修改目標
+      function editTarget() {
+        const newTarget = prompt(
+          "請輸入新的每週目標分鐘數：",
+          state.targetMinutes,
+        );
+        if (newTarget !== null) {
+          const parsed = parseInt(newTarget);
+          if (!isNaN(parsed) && parsed > 0) {
+            state.targetMinutes = parsed;
+            saveData();
+            render();
+          } else {
+            alert("請輸入有效的數字！");
+          }
+        }
+      }
+
+      // 修改日期區間
+      function editDateRange() {
+        const newRange = prompt(
+          "請輸入本週時間區間（例如：2026/10/26 ~ 2026/11/01）：",
+          state.currentDateRange,
+        );
+        if (newRange !== null && newRange.trim() !== "") {
+          state.currentDateRange = newRange.trim();
+          saveData();
+          render();
+        }
+      }
+
+      // 開始新的一週 (歸檔)
+      function archiveCurrentWeek() {
+        if (state.records.length === 0) {
+          alert("本週尚無任何運動記錄，無需歸檔！");
+          return;
+        }
+
+        const totalMins = state.records.reduce((acc, r) => acc + r.duration, 0);
+
+        const archiveItem = {
+          id: Date.now(),
+          dateRange: state.currentDateRange,
+          totalMinutes: totalMins,
+          targetMinutes: state.targetMinutes,
+          achieved: totalMins >= state.targetMinutes,
+          records: [...state.records],
         };
 
-        const zoneBadgeMap = {
-            'Zone 1': { name: 'Zone 1 (暖身)', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300', barColor: 'bg-slate-400' },
-            'Zone 2': { name: 'Zone 2 (燃脂)', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300', barColor: 'bg-blue-600' },
-            'Zone 3': { name: 'Zone 3 (耐力)', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300', barColor: 'bg-emerald-600' },
-            'Zone 4': { name: 'Zone 4 (無氧)', color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300', barColor: 'bg-amber-600' },
-            'Zone 5': { name: 'Zone 5 (極限)', color: 'bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300', barColor: 'bg-red-600' }
-        };
+        state.history.unshift(archiveItem);
+        state.records = []; // 清空當週記錄
 
-        const dayNameMap = {
-            'Mon': '週一', 'Tue': '週二', 'Wed': '週三', 'Thu': '週四', 'Fri': '週五', 'Sat': '週六', 'Sun': '週日'
-        };
+        // 自動推進下週預設日期字串
+        state.currentDateRange = "新的一週記錄區間";
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            ensureStartDate();
-            autoSetDay();
-            bindEvents();
-            setupPWA();
-            renderUI();
-            lucide.createIcons();
+        saveData();
+        render();
+        switchTab("history");
+      }
+
+      // 刪除歷史歸檔
+      function deleteHistory(id) {
+        if (confirm("確定要刪除這筆歷史週紀錄嗎？")) {
+          state.history = state.history.filter((h) => h.id !== id);
+          saveData();
+          render();
+        }
+      }
+
+      // 頁籤切換
+      function switchTab(tab) {
+        const currentSec = document.getElementById("section-current");
+        const historySec = document.getElementById("section-history");
+        const btnCurrent = document.getElementById("tab-current");
+        const btnHistory = document.getElementById("tab-history");
+
+        if (tab === "current") {
+          currentSec.classList.remove("hidden");
+          historySec.classList.add("hidden");
+          btnCurrent.className =
+            "px-3 py-1.5 rounded-lg bg-white shadow-sm text-primary transition-all";
+          btnHistory.className =
+            "px-3 py-1.5 rounded-lg text-textmuted transition-all";
+        } else {
+          currentSec.classList.add("hidden");
+          historySec.classList.remove("hidden");
+          btnHistory.className =
+            "px-3 py-1.5 rounded-lg bg-white shadow-sm text-primary transition-all";
+          btnCurrent.className =
+            "px-3 py-1.5 rounded-lg text-textmuted transition-all";
+        }
+      }
+
+      // 畫面渲染
+      function render() {
+        // 計算總分鐘數
+        const totalMins = state.records.reduce((acc, r) => acc + r.duration, 0);
+        const totalHours = (totalMins / 60).toFixed(1);
+
+        document.getElementById("total-minutes").innerText = totalMins;
+        document.getElementById("total-hours-sub").innerText =
+          `(${totalHours} 小時)`;
+        document.getElementById("target-display").innerText =
+          state.targetMinutes;
+        document.getElementById("current-date-range").innerText =
+          state.currentDateRange;
+
+        // 進度條與圓形環
+        const percent = Math.min(
+          Math.round((totalMins / state.targetMinutes) * 100),
+          100,
+        );
+        document.getElementById("progress-percent").innerText = `${percent}%`;
+        document.getElementById("progress-bar").style.width = `${percent}%`;
+
+        const circleCircumference = 175.93;
+        const strokeOffset =
+          circleCircumference - (percent / 100) * circleCircumference;
+        document.getElementById("progress-ring").style.strokeDashoffset =
+          strokeOffset;
+
+        // 差額提示
+        const diff = state.targetMinutes - totalMins;
+        const statusEl = document.getElementById("target-status");
+        if (diff > 0) {
+          statusEl.innerText = `還差 ${diff} 分鐘`;
+          statusEl.className = "font-medium text-textmuted";
+        } else {
+          statusEl.innerText = `已達成每週目標！`;
+          statusEl.className = "font-bold text-emerald-600";
+        }
+
+        // 心率區間統計
+        renderZoneSummary();
+
+        // 渲染本週明細
+        const listEl = document.getElementById("records-list");
+        if (state.records.length === 0) {
+          listEl.innerHTML = `<p class="text-xs text-textmuted text-center py-4">本週還沒有新增運動記錄，趕快開始吧！</p>`;
+        } else {
+          listEl.innerHTML = state.records
+            .map(
+              (r) => `
+                    <div class="flex justify-between items-center bg-bglight border border-bordercolor/60 rounded-xl px-3.5 py-2.5">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-bold text-primary">${r.day}</span>
+                                <span class="text-xs font-semibold text-accent bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">${r.type}</span>
+                                <span class="text-[10px] font-medium bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">${r.zone}</span>
+                            </div>
+                            ${r.note ? `<p class="text-[11px] text-textmuted">${r.note}</p>` : ""}
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs font-bold text-primary">${r.duration} 分鐘</span>
+                            <button onclick="deleteRecord(${r.id})" class="text-textmuted hover:text-red-500 text-xs px-1.5 py-1 transition-colors">✕</button>
+                        </div>
+                    </div>
+                `,
+            )
+            .join("");
+        }
+
+        // 渲染歷史歸檔
+        const historyListEl = document.getElementById("history-list");
+        document.getElementById("history-count").innerText =
+          state.history.length;
+        document.getElementById("history-total-weeks").innerText =
+          `共 ${state.history.length} 週紀錄`;
+
+        if (state.history.length === 0) {
+          historyListEl.innerHTML = `<p class="text-xs text-textmuted text-center py-6">尚無歷史歸檔記錄。</p>`;
+        } else {
+          historyListEl.innerHTML = state.history
+            .map(
+              (h) => `
+                    <div class="bg-bglight border border-bordercolor rounded-xl p-4 space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-bold text-primary block">${h.dateRange}</span>
+                                <span class="text-[11px] text-textmuted">總計：<strong>${h.totalMinutes}</strong> 分鐘 (目標 ${h.targetMinutes}m)</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${h.achieved ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}">
+                                    ${h.achieved ? "達標" : "未達標"}
+                                </span>
+                                <button onclick="deleteHistory(${h.id})" class="text-textmuted hover:text-red-500 text-xs">✕</button>
+                            </div>
+                        </div>
+                        <div class="pt-2 border-t border-bordercolor space-y-1">
+                            ${h.records
+                              .map(
+                                (r) => `
+                                <div class="flex justify-between text-[11px] text-textmuted">
+                                    <span>${r.day} - ${r.type} (${r.zone})</span>
+                                    <span>${r.duration}m</span>
+                                </div>
+                            `,
+                              )
+                              .join("")}
+                        </div>
+                    </div>
+                `,
+            )
+            .join("");
+        }
+      }
+
+      // 計算心率區間分佈條
+      function renderZoneSummary() {
+        const zones = {
+          "Zone 1": 0,
+          "Zone 2": 0,
+          "Zone 3": 0,
+          "Zone 4": 0,
+          "Zone 5": 0,
+        };
+        let total = 0;
+        state.records.forEach((r) => {
+          if (zones[r.zone] !== undefined) {
+            zones[r.zone] += r.duration;
+            total += r.duration;
+          }
         });
 
-        function loadData() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) appData = { ...appData, ...JSON.parse(raw) };
-            } catch (e) { console.error(e); }
+        const summaryText = document.getElementById("zone-summary-text");
+        const miniBars = document.getElementById("zone-mini-bars");
 
-            if (appData.darkMode) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+        if (total === 0) {
+          summaryText.innerText = "尚無記錄";
+          miniBars.innerHTML = `<div class="bg-bordercolor w-full h-full"></div>`;
+          return;
         }
 
-        function saveData() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-            } catch (e) { console.error(e); }
+        // 尋找佔比最高的主力區間
+        let maxZone = "Zone 1";
+        let maxMins = 0;
+        for (let z in zones) {
+          if (zones[z] > maxMins) {
+            maxMins = zones[z];
+            maxZone = z;
+          }
         }
+        summaryText.innerText = `主力 ${maxZone} (${maxMins}m)`;
 
-        function formatDate(d) {
-            const date = new Date(d);
-            return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
-        }
+        // 繪製顏色分佈
+        const colors = {
+          "Zone 1": "bg-slate-400",
+          "Zone 2": "bg-blue-400",
+          "Zone 3": "bg-emerald-400",
+          "Zone 4": "bg-amber-500",
+          "Zone 5": "bg-rose-500",
+        };
 
-        function getMonday(d) {
-            const date = new Date(d);
-            const day = date.getDay();
-            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-            return new Date(date.setDate(diff));
-        }
+        miniBars.innerHTML = Object.keys(zones)
+          .map((z) => {
+            const mins = zones[z];
+            const pct = total > 0 ? (mins / total) * 100 : 0;
+            if (pct === 0) return "";
+            return `<div class="${colors[z]} h-full transition-all" style="width: ${pct}%" title="${z}: ${mins}m"></div>`;
+          })
+          .join("");
+      }
 
-        function ensureStartDate() {
-            if (!appData.currentWeekStartDate) {
-                appData.currentWeekStartDate = getMonday(new Date()).toISOString().split('T')[0];
-                saveData();
-            }
-        }
-
-        function autoSetDay() {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const today = days[new Date().getDay()];
-            const selectEl = document.getElementById('log-day');
-            if (selectEl) selectEl.value = today;
-        }
-
-        function switchTab(tab) {
-            const viewCurrent = document.getElementById('view-current');
-            const viewHistory = document.getElementById('view-history');
-            const tabCurrent = document.getElementById('tab-current');
-            const tabHistory = document.getElementById('tab-history');
-
-            if (tab === 'current') {
-                viewCurrent.classList.remove('hidden');
-                viewHistory.classList.add('hidden');
-                tabCurrent.className = 'py-2.5 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white';
-                tabHistory.className = 'py-2.5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
-            } else {
-                viewCurrent.classList.add('hidden');
-                viewHistory.classList.remove('hidden');
-                tabHistory.className = 'py-2.5 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white';
-                tabCurrent.className = 'py-2.5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
-                renderHistoryList();
-            }
-        }
-
-        function renderUI() {
-            const totalMinutes = appData.logs.reduce((sum, item) => sum + item.duration, 0);
-            const totalHours = (totalMinutes / 60).toFixed(1);
-            const goal = appData.weeklyGoal;
-            const percent = Math.min(Math.round((totalMinutes / goal) * 100), 999);
-
-            document.getElementById('total-minutes-display').textContent = totalMinutes;
-            document.getElementById('total-hours-display').textContent = `(${totalHours} 小時)`;
-            document.getElementById('goal-minutes-display').textContent = goal;
-
-            // Linear & Circular Progress
-            const fillWidth = Math.min((totalMinutes / goal) * 100, 100);
-            document.getElementById('progress-bar-fill').style.width = `${fillWidth}%`;
-            document.getElementById('progress-circle').style.strokeDashoffset = 100 - fillWidth;
-            document.getElementById('progress-percent-text').textContent = `${percent}%`;
-
-            // Dates Label
-            const startDate = new Date(appData.currentWeekStartDate);
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-            document.getElementById('current-week-label').textContent = `本週累計 (${formatDate(startDate)} ~ ${formatDate(endDate)})`;
-
-            // Remaining Status
-            const remainingEl = document.getElementById('remaining-minutes-display');
-            if (totalMinutes >= goal) {
-                remainingEl.textContent = '目標已達成 🎉';
-            } else {
-                remainingEl.textContent = `還差 ${goal - totalMinutes} 分鐘`;
-            }
-
-            // Zone Distribution
-            renderZoneDistribution(totalMinutes);
-
-            document.getElementById('history-count-badge').textContent = appData.history.length;
-            renderLogList();
-        }
-
-        function renderZoneDistribution(totalMinutes) {
-            const barContainer = document.getElementById('zone-distribution-bar');
-            const summaryText = document.getElementById('zone-summary-text');
-
-            if (totalMinutes === 0) {
-                barContainer.innerHTML = '';
-                summaryText.textContent = '尚無紀錄';
-                return;
-            }
-
-            const zoneTotals = { 'Zone 1': 0, 'Zone 2': 0, 'Zone 3': 0, 'Zone 4': 0, 'Zone 5': 0 };
-            appData.logs.forEach(log => {
-                const z = log.zone || 'Zone 2';
-                zoneTotals[z] = (zoneTotals[z] || 0) + log.duration;
-            });
-
-            let html = '';
-            let mainZone = 'Zone 2';
-            let maxMins = 0;
-
-            Object.keys(zoneTotals).forEach(z => {
-                const mins = zoneTotals[z];
-                if (mins > maxMins) {
-                    maxMins = mins;
-                    mainZone = z;
-                }
-                if (mins > 0) {
-                    const pct = (mins / totalMinutes) * 100;
-                    const info = zoneBadgeMap[z] || zoneBadgeMap['Zone 2'];
-                    html += `<div class="${info.barColor} h-full" style="width: ${pct}%" title="${z}: ${mins}分鐘"></div>`;
-                }
-            });
-
-            barContainer.innerHTML = html;
-            summaryText.textContent = `主要為 ${mainZone.replace('Zone ', 'Z')} (${maxMins}m)`;
-        }
-
-        function renderLogList() {
-            const listContainer = document.getElementById('logs-list');
-            const emptyState = document.getElementById('empty-state');
-            document.getElementById('log-count-badge').textContent = `${appData.logs.length} 筆記錄`;
-
-            if (appData.logs.length === 0) {
-                listContainer.innerHTML = '';
-                listContainer.appendChild(emptyState);
-                return;
-            }
-
-            const sorted = [...appData.logs].sort((a, b) => b.timestamp - a.timestamp);
-            let html = '';
-
-            sorted.forEach(log => {
-                const actName = activityNames[log.activity] || log.activity;
-                const zoneInfo = zoneBadgeMap[log.zone || 'Zone 2'];
-                const dayLabel = dayNameMap[log.day] || log.day;
-
-                html += `
-                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-3.5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold text-sm text-slate-800 dark:text-slate-100">${actName}</span>
-                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md font-medium">${dayLabel}</span>
-                                <span class="text-[10px] px-2 py-0.5 rounded-md font-medium ${zoneInfo.color}">${zoneInfo.name}</span>
-                            </div>
-                            ${log.notes ? `<p class="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">${log.notes}</p>` : ''}
-                        </div>
-
-                        <div class="flex items-center gap-2.5">
-                            <span class="font-extrabold text-base text-navy-900 dark:text-slate-100">+${log.duration}<span class="text-xs font-normal text-slate-400">m</span></span>
-                            <button onclick="deleteLog('${log.id}')" class="text-slate-300 hover:text-slate-600 p-1 transition">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            listContainer.innerHTML = html;
-            lucide.createIcons();
-        }
-
-        function renderHistoryList() {
-            const container = document.getElementById('history-list');
-            const emptyState = document.getElementById('history-empty-state');
-
-            if (!appData.history || appData.history.length === 0) {
-                container.innerHTML = '';
-                container.appendChild(emptyState);
-                return;
-            }
-
-            const sorted = [...appData.history].sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-            let html = '';
-
-            sorted.forEach(item => {
-                const hours = (item.totalMinutes / 60).toFixed(1);
-                const isAchieved = item.totalMinutes >= item.goalMinutes;
-
-                html += `
-                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
-                        <div class="p-4 flex items-center justify-between cursor-pointer" onclick="toggleHistoryDetails('${item.id}')">
-                            <div>
-                                <div class="text-xs text-slate-400 mb-0.5">${formatDate(item.startDate)} ~ ${formatDate(item.endDate)}</div>
-                                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">${item.totalMinutes} <span class="text-xs font-normal text-slate-500">分鐘 (${hours} 小時)</span></div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[11px] font-medium px-2 py-0.5 rounded-md ${isAchieved ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200' : 'bg-slate-100 text-slate-400'}">
-                                    ${isAchieved ? '達標' : '未達標'} (${item.goalMinutes}m)
-                                </span>
-                                <i id="history-arrow-${item.id}" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"></i>
-                            </div>
-                        </div>
-
-                        <div id="history-detail-${item.id}" class="hidden border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3 space-y-1.5">
-                            ${item.logs.map(log => {
-                                const zInfo = zoneBadgeMap[log.zone || 'Zone 2'];
-                                return `
-                                    <div class="flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800/60 last:border-0">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="font-medium text-slate-700 dark:text-slate-300">${activityNames[log.activity] || log.activity}</span>
-                                            <span class="text-[10px] text-slate-400">(${dayNameMap[log.day] || log.day})</span>
-                                            <span class="text-[9px] px-1.5 py-0.2 rounded ${zInfo.color}">${log.zone || 'Zone 2'}</span>
-                                        </div>
-                                        <span class="font-semibold text-slate-800 dark:text-slate-200">+${log.duration} 分鐘</span>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-            lucide.createIcons();
-        }
-
-        function toggleHistoryDetails(id) {
-            const el = document.getElementById(`history-detail-${id}`);
-            const arrow = document.getElementById(`history-arrow-${id}`);
-            if (el) {
-                el.classList.toggle('hidden');
-                if (arrow) arrow.classList.toggle('rotate-180');
-            }
-        }
-
-        function setQuickDuration(m) {
-            document.getElementById('log-duration').value = m;
-        }
-
-        function bindEvents() {
-            // Form Add Log
-            document.getElementById('add-log-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const day = document.getElementById('log-day').value;
-                const activity = document.getElementById('log-activity').value;
-                const zone = document.getElementById('log-zone').value;
-                const duration = parseInt(document.getElementById('log-duration').value, 10);
-                const notes = document.getElementById('log-notes').value.trim();
-
-                if (isNaN(duration) || duration <= 0) return;
-
-                const prevTotal = appData.logs.reduce((sum, item) => sum + item.duration, 0);
-
-                appData.logs.push({
-                    id: Date.now().toString(),
-                    day, activity, zone, duration, notes,
-                    timestamp: Date.now()
-                });
-
-                saveData();
-                renderUI();
-
-                document.getElementById('log-duration').value = '';
-                document.getElementById('log-notes').value = '';
-                showToast('已加入累計記錄');
-
-                if (prevTotal < appData.weeklyGoal && (prevTotal + duration) >= appData.weeklyGoal) {
-                    if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-                }
-            });
-
-            // Theme Toggle
-            document.getElementById('theme-toggle').addEventListener('click', () => {
-                appData.darkMode = !appData.darkMode;
-                document.documentElement.classList.toggle('dark', appData.darkMode);
-                saveData();
-            });
-
-            // Goal Edit Modal
-            const goalModal = document.getElementById('goal-modal');
-            const modalGoalInput = document.getElementById('modal-goal-input');
-
-            document.getElementById('edit-goal-btn').addEventListener('click', () => {
-                modalGoalInput.value = appData.weeklyGoal;
-                goalModal.classList.remove('hidden');
-            });
-
-            document.getElementById('cancel-goal-btn').addEventListener('click', () => goalModal.classList.add('hidden'));
-
-            document.getElementById('save-goal-btn').addEventListener('click', () => {
-                const val = parseInt(modalGoalInput.value, 10);
-                if (val && val > 0) {
-                    appData.weeklyGoal = val;
-                    saveData();
-                    renderUI();
-                    goalModal.classList.add('hidden');
-                    showToast('每週目標已更新');
-                }
-            });
-
-            // Archive Reset Modal
-            const resetModal = document.getElementById('reset-modal');
-            document.getElementById('quick-reset-btn').addEventListener('click', () => resetModal.classList.remove('hidden'));
-            document.getElementById('cancel-reset-btn').addEventListener('click', () => resetModal.classList.add('hidden'));
-
-            document.getElementById('confirm-reset-btn').addEventListener('click', () => {
-                archiveWeek();
-                resetModal.classList.add('hidden');
-                showToast('已存檔歸檔並開啟新的一週');
-            });
-        }
-
-        function archiveWeek() {
-            const totalMinutes = appData.logs.reduce((sum, item) => sum + item.duration, 0);
-            const startDate = new Date(appData.currentWeekStartDate);
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-
-            if (!appData.history) appData.history = [];
-
-            appData.history.push({
-                id: 'week_' + Date.now(),
-                startDate: appData.currentWeekStartDate,
-                endDate: endDate.toISOString().split('T')[0],
-                totalMinutes,
-                goalMinutes: appData.weeklyGoal,
-                logs: [...appData.logs]
-            });
-
-            appData.logs = [];
-            const nextMonday = new Date(endDate);
-            nextMonday.setDate(endDate.getDate() + 1);
-            appData.currentWeekStartDate = nextMonday.toISOString().split('T')[0];
-
-            saveData();
-            renderUI();
-        }
-
-        function deleteLog(id) {
-            appData.logs = appData.logs.filter(l => l.id !== id);
-            saveData();
-            renderUI();
-            showToast('記錄已刪除');
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-message').textContent = msg;
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 2000);
-        }
-
-        function setupPWA() {
-            const manifest = {
-                name: "有氧時間追蹤",
-                short_name: "有氧追蹤",
-                start_url: ".",
-                display: "standalone",
-                background_color: "#F8FAF9",
-                theme_color: "#0F172A",
-                icons: [{
-                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230F172A'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='10' fill='none'/></svg>",
-                    sizes: "192x192 512x512",
-                    type: "image/svg+xml"
-                }]
-            };
-            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-            document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
-
-            if ('serviceWorker' in navigator) {
-                const sw = `
-                    self.addEventListener('install', e => self.skipWaiting());
-                    self.addEventListener('activate', e => clients.claim());
-                    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
-                `;
-                navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw], { type: 'text/javascript' }))).catch(() => {});
-            }
-        }
+      // 啟動
+      window.onload = loadData;
     </script>
-</body>
+  </body>
 </html>
