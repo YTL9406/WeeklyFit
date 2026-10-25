@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>每週有氧運動累計追蹤器</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" id="pwa-manifest">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#FDFBF7',
+                            100: '#F7F4EE',
+                            200: '#EFEBE1',
+                        },
+                        navy: {
+                            800: '#1E293B',
+                            900: '#0F172A',
+                            950: '#030712',
+                        },
+                        zone: {
+                            z1: '#64748B', // Gray
+                            z2: '#2563EB', // Blue
+                            z3: '#059669', // Emerald
+                            z4: '#D97706', // Amber
+                            z5: '#DC2626'  // Red
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        button, select, input { touch-action: manipulation; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-slate-100/80 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200 select-none pb-12 font-sans">
+
+    <!-- Top App Header -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3.5">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-navy-900 text-white rounded-xl shadow-sm">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight text-slate-900 dark:text-slate-50 tracking-tight">有氧時間追蹤</h1>
+                    <span id="offline-badge" class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse"></span>
+                        <span id="network-status-text">離線可用</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1">
+                <button id="theme-toggle" class="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-md w-full mx-auto p-4 space-y-4">
+
+        <!-- Navigation Tabs -->
+        <div class="grid grid-cols-2 gap-1 p-1 bg-slate-200/70 dark:bg-slate-900 rounded-2xl text-xs font-semibold">
+            <button id="tab-current" onclick="switchTab('current')" class="py-2.5 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                本週累計
+            </button>
+            <button id="tab-history" onclick="switchTab('history')" class="py-2.5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                歷史歸檔 <span id="history-count-badge" class="ml-1 px-1.5 py-0.2 bg-slate-300/80 dark:bg-slate-700 rounded-full text-[10px]">0</span>
+            </button>
+        </div>
+
+        <!-- ==================== TAB 1: CURRENT WEEK ==================== -->
+        <div id="view-current" class="space-y-4">
+
+            <!-- Summary Dashboard Card (Clean White/Navy Style) -->
+            <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200/90 dark:border-slate-800 relative overflow-hidden">
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <div>
+                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <span id="current-week-label">本週累計</span>
+                        </div>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="total-minutes-display" class="text-4xl font-extrabold tracking-tight text-navy-900 dark:text-slate-50">0</span>
+                            <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">分鐘</span>
+                            <span id="total-hours-display" class="text-xs text-slate-400 ml-0.5">(0.0 小時)</span>
+                        </div>
+                    </div>
+
+                    <!-- Circular Progress -->
+                    <div class="relative w-16 h-16 flex items-center justify-center">
+                        <svg class="w-full h-full" viewBox="0 0 36 36">
+                            <path class="text-slate-100 dark:text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="progress-circle" class="text-navy-900 dark:text-slate-200 progress-ring-circle" stroke-linecap="round" stroke-width="3.5" stroke-dasharray="100, 100" stroke-dashoffset="100" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <span id="progress-percent-text" class="absolute text-[11px] font-bold text-slate-800 dark:text-slate-200">0%</span>
+                    </div>
+                </div>
+
+                <!-- Linear Progress Bar -->
+                <div class="space-y-1.5 relative z-10">
+                    <div class="flex justify-between items-center text-xs text-slate-600 dark:text-slate-300 font-medium">
+                        <div class="flex items-center gap-1.5">
+                            <span>目標：<span id="goal-minutes-display" class="font-bold">150</span> 分鐘</span>
+                            <button id="edit-goal-btn" class="text-slate-400 hover:text-navy-900 dark:hover:text-slate-200 p-0.5 rounded transition" title="修改目標">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                        <span id="remaining-minutes-display" class="text-slate-500">還差 150 分鐘</span>
+                    </div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800">
+                        <div id="progress-bar-fill" class="bg-navy-900 dark:bg-slate-200 h-full rounded-full transition-all duration-500 w-0"></div>
+                    </div>
+                </div>
+
+                <!-- Zone Breakdown Bar inside Dashboard -->
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                    <div class="text-[11px] font-medium text-slate-400 mb-1.5 flex justify-between">
+                        <span>心率區間分佈</span>
+                        <span id="zone-summary-text" class="text-slate-500">尚無紀錄</span>
+                    </div>
+                    <div id="zone-distribution-bar" class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden">
+                        <!-- Dynamic Zone bars fill via JS -->
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
+                    <button id="quick-reset-btn" class="text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1.5 transition py-1 font-medium">
+                        <i data-lucide="archive" class="w-3.5 h-3.5 text-slate-400"></i>
+                        開始新的一週 (存檔)
+                    </button>
+                    <div id="status-tag" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-medium border border-slate-200 dark:border-slate-700">
+                        進行中
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Add Form -->
+            <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm mb-3 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-slate-500"></i>
+                    新增運動記錄
+                </h2>
+
+                <form id="add-log-form" class="space-y-3">
+                    <!-- Day & Activity -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">星期</label>
+                            <select id="log-day" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
+                                <option value="Mon">星期一</option>
+                                <option value="Tue">星期二</option>
+                                <option value="Wed">星期三</option>
+                                <option value="Thu">星期四</option>
+                                <option value="Fri">星期五</option>
+                                <option value="Sat">星期六</option>
+                                <option value="Sun">星期日</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">運動種類</label>
+                            <select id="log-activity" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
+                                <option value="Running">跑步</option>
+                                <option value="Cycling">騎車</option>
+                                <option value="Walking">快走</option>
+                                <option value="Incline Walking">爬坡</option>
+                                <option value="Swimming">游泳</option>
+                                <option value="HIIT">HIIT</option>
+                                <option value="Jump Rope">跳繩</option>
+                                <option value="Other">其他</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Heart Rate Zone Selector -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">心率區間 (Zone)</label>
+                        <select id="log-zone" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
+                            <option value="Zone 1">Zone 1 (暖身/恢復)</option>
+                            <option value="Zone 2" selected>Zone 2 (燃脂/基礎有氧)</option>
+                            <option value="Zone 3">Zone 3 (耐力/有氧)</option>
+                            <option value="Zone 4">Zone 4 (無氧 threshold)</option>
+                            <option value="Zone 5">Zone 5 (極限/VO2 Max)</option>
+                        </select>
+                    </div>
+
+                    <!-- Duration Inputs -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">時長 (分鐘)</label>
+                            <div class="flex gap-1">
+                                <button type="button" onclick="setQuickDuration(15)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+15</button>
+                                <button type="button" onclick="setQuickDuration(30)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+30</button>
+                                <button type="button" onclick="setQuickDuration(45)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+45</button>
+                                <button type="button" onclick="setQuickDuration(60)" class="px-2 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-md transition">+60</button>
+                            </div>
+                        </div>
+                        <input type="number" id="log-duration" min="1" max="1440" placeholder="例如：30" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
+                    </div>
+
+                    <!-- Optional Notes -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">備註 (選填)</label>
+                        <input type="text" id="log-notes" placeholder="例如：坡度 6%、平均心率 138" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-navy-900 hover:bg-navy-800 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        加入累計記錄
+                    </button>
+                </form>
+            </section>
+
+            <!-- Logs Detail List -->
+            <section class="space-y-2.5">
+                <div class="flex justify-between items-center px-1">
+                    <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+                        <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
+                        本週運動明細
+                    </h2>
+                    <span id="log-count-badge" class="text-xs text-slate-500 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-full">0 筆記錄</span>
+                </div>
+
+                <div id="logs-list" class="space-y-2">
+                    <div id="empty-state" class="bg-white dark:bg-slate-900 rounded-2xl p-7 text-center border border-dashed border-slate-200 dark:border-slate-800">
+                        <i data-lucide="dumbbell" class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2"></i>
+                        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">本週尚無運動記錄</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== TAB 2: HISTORY ==================== -->
+        <div id="view-history" class="space-y-3 hidden">
+            <div class="flex justify-between items-center px-1">
+                <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+                    <i data-lucide="archive" class="w-4 h-4 text-slate-500"></i>
+                    歷史週紀錄與存檔
+                </h2>
+                <span class="text-xs text-slate-400">自動永久離線儲存</span>
+            </div>
+
+            <div id="history-list" class="space-y-3">
+                <div id="history-empty-state" class="bg-white dark:bg-slate-900 rounded-2xl p-8 text-center border border-dashed border-slate-200 dark:border-slate-800">
+                    <i data-lucide="history" class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2"></i>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">尚無歷史歸檔紀錄</p>
+                    <p class="text-[11px] text-slate-400 mt-1">按下「開始新的一週」時，資料會存檔至此。</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Goal Edit Modal -->
+    <div id="goal-modal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-xl border border-slate-200 dark:border-slate-800">
+            <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">修改每週目標</h3>
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">目標時間 (分鐘)</label>
+                <input type="number" id="modal-goal-input" min="10" max="3000" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
+            </div>
+            <div class="flex gap-2">
+                <button id="cancel-goal-btn" class="w-1/2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 rounded-xl text-xs font-medium">取消</button>
+                <button id="save-goal-btn" class="w-1/2 bg-navy-900 dark:bg-slate-700 text-white py-2 rounded-xl text-xs font-medium">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Archive Modal -->
+    <div id="reset-modal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xs w-full p-5 space-y-3 shadow-xl border border-slate-200 dark:border-slate-800 text-center">
+            <div class="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-full flex items-center justify-center mx-auto">
+                <i data-lucide="archive" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">開啟新的一週？</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                本週總時間與明細將存入「歷史歸檔」，當週紀錄將歸零重新計算。
+            </p>
+            <div class="flex gap-2 pt-1">
+                <button id="cancel-reset-btn" class="w-1/2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 rounded-xl text-xs font-medium">取消</button>
+                <button id="confirm-reset-btn" class="w-1/2 bg-navy-900 dark:bg-slate-700 text-white py-2 rounded-xl text-xs font-medium">確定歸檔</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 opacity-0 pointer-events-none transition-all duration-300 z-50">
+        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+        <span id="toast-message">更新成功</span>
+    </div>
+
+    <!-- JS Core Logic -->
+    <script>
+        const STORAGE_KEY = 'aerobic_tracker_light_v3';
+        
+        let appData = {
+            weeklyGoal: 150,
+            currentWeekStartDate: null,
+            logs: [],
+            history: [],
+            darkMode: false
+        };
+
+        const activityNames = {
+            'Running': '跑步',
+            'Cycling': '騎車',
+            'Walking': '快走',
+            'Incline Walking': '爬坡',
+            'Swimming': '游泳',
+            'HIIT': 'HIIT',
+            'Jump Rope': '跳繩',
+            'Other': '其他'
+        };
+
+        const zoneBadgeMap = {
+            'Zone 1': { name: 'Zone 1 (暖身)', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300', barColor: 'bg-slate-400' },
+            'Zone 2': { name: 'Zone 2 (燃脂)', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300', barColor: 'bg-blue-600' },
+            'Zone 3': { name: 'Zone 3 (耐力)', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300', barColor: 'bg-emerald-600' },
+            'Zone 4': { name: 'Zone 4 (無氧)', color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300', barColor: 'bg-amber-600' },
+            'Zone 5': { name: 'Zone 5 (極限)', color: 'bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300', barColor: 'bg-red-600' }
+        };
+
+        const dayNameMap = {
+            'Mon': '週一', 'Tue': '週二', 'Wed': '週三', 'Thu': '週四', 'Fri': '週五', 'Sat': '週六', 'Sun': '週日'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            ensureStartDate();
+            autoSetDay();
+            bindEvents();
+            setupPWA();
+            renderUI();
+            lucide.createIcons();
+        });
+
+        function loadData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) appData = { ...appData, ...JSON.parse(raw) };
+            } catch (e) { console.error(e); }
+
+            if (appData.darkMode) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            } catch (e) { console.error(e); }
+        }
+
+        function formatDate(d) {
+            const date = new Date(d);
+            return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function getMonday(d) {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(date.setDate(diff));
+        }
+
+        function ensureStartDate() {
+            if (!appData.currentWeekStartDate) {
+                appData.currentWeekStartDate = getMonday(new Date()).toISOString().split('T')[0];
+                saveData();
+            }
+        }
+
+        function autoSetDay() {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = days[new Date().getDay()];
+            const selectEl = document.getElementById('log-day');
+            if (selectEl) selectEl.value = today;
+        }
+
+        function switchTab(tab) {
+            const viewCurrent = document.getElementById('view-current');
+            const viewHistory = document.getElementById('view-history');
+            const tabCurrent = document.getElementById('tab-current');
+            const tabHistory = document.getElementById('tab-history');
+
+            if (tab === 'current') {
+                viewCurrent.classList.remove('hidden');
+                viewHistory.classList.add('hidden');
+                tabCurrent.className = 'py-2.5 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white';
+                tabHistory.className = 'py-2.5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+            } else {
+                viewCurrent.classList.add('hidden');
+                viewHistory.classList.remove('hidden');
+                tabHistory.className = 'py-2.5 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white';
+                tabCurrent.className = 'py-2.5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+                renderHistoryList();
+            }
+        }
+
+        function renderUI() {
+            const totalMinutes = appData.logs.reduce((sum, item) => sum + item.duration, 0);
+            const totalHours = (totalMinutes / 60).toFixed(1);
+            const goal = appData.weeklyGoal;
+            const percent = Math.min(Math.round((totalMinutes / goal) * 100), 999);
+
+            document.getElementById('total-minutes-display').textContent = totalMinutes;
+            document.getElementById('total-hours-display').textContent = `(${totalHours} 小時)`;
+            document.getElementById('goal-minutes-display').textContent = goal;
+
+            // Linear & Circular Progress
+            const fillWidth = Math.min((totalMinutes / goal) * 100, 100);
+            document.getElementById('progress-bar-fill').style.width = `${fillWidth}%`;
+            document.getElementById('progress-circle').style.strokeDashoffset = 100 - fillWidth;
+            document.getElementById('progress-percent-text').textContent = `${percent}%`;
+
+            // Dates Label
+            const startDate = new Date(appData.currentWeekStartDate);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            document.getElementById('current-week-label').textContent = `本週累計 (${formatDate(startDate)} ~ ${formatDate(endDate)})`;
+
+            // Remaining Status
+            const remainingEl = document.getElementById('remaining-minutes-display');
+            if (totalMinutes >= goal) {
+                remainingEl.textContent = '目標已達成 🎉';
+            } else {
+                remainingEl.textContent = `還差 ${goal - totalMinutes} 分鐘`;
+            }
+
+            // Zone Distribution
+            renderZoneDistribution(totalMinutes);
+
+            document.getElementById('history-count-badge').textContent = appData.history.length;
+            renderLogList();
+        }
+
+        function renderZoneDistribution(totalMinutes) {
+            const barContainer = document.getElementById('zone-distribution-bar');
+            const summaryText = document.getElementById('zone-summary-text');
+
+            if (totalMinutes === 0) {
+                barContainer.innerHTML = '';
+                summaryText.textContent = '尚無紀錄';
+                return;
+            }
+
+            const zoneTotals = { 'Zone 1': 0, 'Zone 2': 0, 'Zone 3': 0, 'Zone 4': 0, 'Zone 5': 0 };
+            appData.logs.forEach(log => {
+                const z = log.zone || 'Zone 2';
+                zoneTotals[z] = (zoneTotals[z] || 0) + log.duration;
+            });
+
+            let html = '';
+            let mainZone = 'Zone 2';
+            let maxMins = 0;
+
+            Object.keys(zoneTotals).forEach(z => {
+                const mins = zoneTotals[z];
+                if (mins > maxMins) {
+                    maxMins = mins;
+                    mainZone = z;
+                }
+                if (mins > 0) {
+                    const pct = (mins / totalMinutes) * 100;
+                    const info = zoneBadgeMap[z] || zoneBadgeMap['Zone 2'];
+                    html += `<div class="${info.barColor} h-full" style="width: ${pct}%" title="${z}: ${mins}分鐘"></div>`;
+                }
+            });
+
+            barContainer.innerHTML = html;
+            summaryText.textContent = `主要為 ${mainZone.replace('Zone ', 'Z')} (${maxMins}m)`;
+        }
+
+        function renderLogList() {
+            const listContainer = document.getElementById('logs-list');
+            const emptyState = document.getElementById('empty-state');
+            document.getElementById('log-count-badge').textContent = `${appData.logs.length} 筆記錄`;
+
+            if (appData.logs.length === 0) {
+                listContainer.innerHTML = '';
+                listContainer.appendChild(emptyState);
+                return;
+            }
+
+            const sorted = [...appData.logs].sort((a, b) => b.timestamp - a.timestamp);
+            let html = '';
+
+            sorted.forEach(log => {
+                const actName = activityNames[log.activity] || log.activity;
+                const zoneInfo = zoneBadgeMap[log.zone || 'Zone 2'];
+                const dayLabel = dayNameMap[log.day] || log.day;
+
+                html += `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-3.5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-100">${actName}</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md font-medium">${dayLabel}</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-md font-medium ${zoneInfo.color}">${zoneInfo.name}</span>
+                            </div>
+                            ${log.notes ? `<p class="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">${log.notes}</p>` : ''}
+                        </div>
+
+                        <div class="flex items-center gap-2.5">
+                            <span class="font-extrabold text-base text-navy-900 dark:text-slate-100">+${log.duration}<span class="text-xs font-normal text-slate-400">m</span></span>
+                            <button onclick="deleteLog('${log.id}')" class="text-slate-300 hover:text-slate-600 p-1 transition">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('history-list');
+            const emptyState = document.getElementById('history-empty-state');
+
+            if (!appData.history || appData.history.length === 0) {
+                container.innerHTML = '';
+                container.appendChild(emptyState);
+                return;
+            }
+
+            const sorted = [...appData.history].sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+            let html = '';
+
+            sorted.forEach(item => {
+                const hours = (item.totalMinutes / 60).toFixed(1);
+                const isAchieved = item.totalMinutes >= item.goalMinutes;
+
+                html += `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <div class="p-4 flex items-center justify-between cursor-pointer" onclick="toggleHistoryDetails('${item.id}')">
+                            <div>
+                                <div class="text-xs text-slate-400 mb-0.5">${formatDate(item.startDate)} ~ ${formatDate(item.endDate)}</div>
+                                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">${item.totalMinutes} <span class="text-xs font-normal text-slate-500">分鐘 (${hours} 小時)</span></div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-medium px-2 py-0.5 rounded-md ${isAchieved ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200' : 'bg-slate-100 text-slate-400'}">
+                                    ${isAchieved ? '達標' : '未達標'} (${item.goalMinutes}m)
+                                </span>
+                                <i id="history-arrow-${item.id}" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"></i>
+                            </div>
+                        </div>
+
+                        <div id="history-detail-${item.id}" class="hidden border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3 space-y-1.5">
+                            ${item.logs.map(log => {
+                                const zInfo = zoneBadgeMap[log.zone || 'Zone 2'];
+                                return `
+                                    <div class="flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800/60 last:border-0">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-medium text-slate-700 dark:text-slate-300">${activityNames[log.activity] || log.activity}</span>
+                                            <span class="text-[10px] text-slate-400">(${dayNameMap[log.day] || log.day})</span>
+                                            <span class="text-[9px] px-1.5 py-0.2 rounded ${zInfo.color}">${log.zone || 'Zone 2'}</span>
+                                        </div>
+                                        <span class="font-semibold text-slate-800 dark:text-slate-200">+${log.duration} 分鐘</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function toggleHistoryDetails(id) {
+            const el = document.getElementById(`history-detail-${id}`);
+            const arrow = document.getElementById(`history-arrow-${id}`);
+            if (el) {
+                el.classList.toggle('hidden');
+                if (arrow) arrow.classList.toggle('rotate-180');
+            }
+        }
+
+        function setQuickDuration(m) {
+            document.getElementById('log-duration').value = m;
+        }
+
+        function bindEvents() {
+            // Form Add Log
+            document.getElementById('add-log-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const day = document.getElementById('log-day').value;
+                const activity = document.getElementById('log-activity').value;
+                const zone = document.getElementById('log-zone').value;
+                const duration = parseInt(document.getElementById('log-duration').value, 10);
+                const notes = document.getElementById('log-notes').value.trim();
+
+                if (isNaN(duration) || duration <= 0) return;
+
+                const prevTotal = appData.logs.reduce((sum, item) => sum + item.duration, 0);
+
+                appData.logs.push({
+                    id: Date.now().toString(),
+                    day, activity, zone, duration, notes,
+                    timestamp: Date.now()
+                });
+
+                saveData();
+                renderUI();
+
+                document.getElementById('log-duration').value = '';
+                document.getElementById('log-notes').value = '';
+                showToast('已加入累計記錄');
+
+                if (prevTotal < appData.weeklyGoal && (prevTotal + duration) >= appData.weeklyGoal) {
+                    if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+                }
+            });
+
+            // Theme Toggle
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                appData.darkMode = !appData.darkMode;
+                document.documentElement.classList.toggle('dark', appData.darkMode);
+                saveData();
+            });
+
+            // Goal Edit Modal
+            const goalModal = document.getElementById('goal-modal');
+            const modalGoalInput = document.getElementById('modal-goal-input');
+
+            document.getElementById('edit-goal-btn').addEventListener('click', () => {
+                modalGoalInput.value = appData.weeklyGoal;
+                goalModal.classList.remove('hidden');
+            });
+
+            document.getElementById('cancel-goal-btn').addEventListener('click', () => goalModal.classList.add('hidden'));
+
+            document.getElementById('save-goal-btn').addEventListener('click', () => {
+                const val = parseInt(modalGoalInput.value, 10);
+                if (val && val > 0) {
+                    appData.weeklyGoal = val;
+                    saveData();
+                    renderUI();
+                    goalModal.classList.add('hidden');
+                    showToast('每週目標已更新');
+                }
+            });
+
+            // Archive Reset Modal
+            const resetModal = document.getElementById('reset-modal');
+            document.getElementById('quick-reset-btn').addEventListener('click', () => resetModal.classList.remove('hidden'));
+            document.getElementById('cancel-reset-btn').addEventListener('click', () => resetModal.classList.add('hidden'));
+
+            document.getElementById('confirm-reset-btn').addEventListener('click', () => {
+                archiveWeek();
+                resetModal.classList.add('hidden');
+                showToast('已存檔歸檔並開啟新的一週');
+            });
+        }
+
+        function archiveWeek() {
+            const totalMinutes = appData.logs.reduce((sum, item) => sum + item.duration, 0);
+            const startDate = new Date(appData.currentWeekStartDate);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+
+            if (!appData.history) appData.history = [];
+
+            appData.history.push({
+                id: 'week_' + Date.now(),
+                startDate: appData.currentWeekStartDate,
+                endDate: endDate.toISOString().split('T')[0],
+                totalMinutes,
+                goalMinutes: appData.weeklyGoal,
+                logs: [...appData.logs]
+            });
+
+            appData.logs = [];
+            const nextMonday = new Date(endDate);
+            nextMonday.setDate(endDate.getDate() + 1);
+            appData.currentWeekStartDate = nextMonday.toISOString().split('T')[0];
+
+            saveData();
+            renderUI();
+        }
+
+        function deleteLog(id) {
+            appData.logs = appData.logs.filter(l => l.id !== id);
+            saveData();
+            renderUI();
+            showToast('記錄已刪除');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 2000);
+        }
+
+        function setupPWA() {
+            const manifest = {
+                name: "有氧時間追蹤",
+                short_name: "有氧追蹤",
+                start_url: ".",
+                display: "standalone",
+                background_color: "#F8FAF9",
+                theme_color: "#0F172A",
+                icons: [{
+                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230F172A'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='10' fill='none'/></svg>",
+                    sizes: "192x192 512x512",
+                    type: "image/svg+xml"
+                }]
+            };
+            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
+
+            if ('serviceWorker' in navigator) {
+                const sw = `
+                    self.addEventListener('install', e => self.skipWaiting());
+                    self.addEventListener('activate', e => clients.claim());
+                    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+                `;
+                navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw], { type: 'text/javascript' }))).catch(() => {});
+            }
+        }
+    </script>
+</body>
+</html>
