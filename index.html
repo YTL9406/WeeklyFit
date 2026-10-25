@@ -36,9 +36,9 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
       background-color: #f8fafc;
-      /* 使用 max 確保在 Safeway / PWA 獨立視窗下都有足夠的頂部留白 */
-      padding-top: max(var(--sat), 16px);
-      padding-bottom: max(var(--sab), 24px);
+      /* 確保在 Safeway / PWA 獨立視窗下頂部有足夠的留白不被擋住 */
+      padding-top: calc(var(--sat) + 12px);
+      padding-bottom: calc(var(--sab) + 24px);
     }
 
     /* 固定式頂部導覽列支援 iOS 安全區域 */
@@ -46,7 +46,7 @@
       padding-top: max(var(--sat), 12px);
     }
 
-    /* 針對 iOS 調整 input 安全性與樣式 */
+    /* 針對 iOS 調整 input 樣式 */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
       -webkit-appearance: none;
@@ -56,7 +56,7 @@
       -moz-appearance: textfield;
     }
 
-    /* 徹底修正 iOS Safari 原生 <input type="date"> 寬度溢出與跑版問題 */
+    /* 徹底修正 iOS Safari 原生 <input type="date"> 寬度溢出問題 */
     input[type="date"] {
       -webkit-appearance: none;
       -moz-appearance: none;
@@ -68,11 +68,16 @@
       background-color: #f8fafc;
       min-height: 44px;
     }
+
+    /* 確保所有按鈕與選單在觸控裝置上反應靈敏 */
+    button, select, input {
+      touch-action: manipulation;
+    }
   </style>
 </head>
 <body class="text-slate-800 min-h-screen antialiased selection:bg-sky-500 selection:text-white">
 
-  <!-- 頂部 Navigation Header (加入 iOS safe-area-inset-top 避開動態島/時間列) -->
+  <!-- 頂部 Navigation Header (加入 iOS safe-area-inset-top 避開動態島) -->
   <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 pb-3 ios-safe-header">
     <div class="max-w-xl mx-auto flex items-center justify-between">
       <!-- App Logo & Title -->
@@ -103,7 +108,22 @@
 
   <!-- 主要內容區域 -->
   <main class="max-w-xl mx-auto px-4 mt-4 space-y-5">
-            編輯日期
+
+    <!-- VIEW 1: 本週累計 View -->
+    <div id="viewCurrent" class="space-y-5">
+      
+      <!-- 本週概覽 Card -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-lg border border-emerald-200/60 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>進行中
+            </span>
+            <span id="currentWeekRangeDisplay" class="text-xs font-semibold text-slate-600">2026/10/25 ~ 2026/10/31</span>
+          </div>
+          <button onclick="openDateRangeModal()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-medium transition flex items-center gap-1">
+            <i class="fa-regular fa-calendar-days text-[11px]"></i>
+            <span>編輯日期</span>
           </button>
         </div>
 
@@ -285,7 +305,7 @@
     </div>
   </div>
 
-  <!-- MODAL 2: 選擇本週起始日期 (修正溢出與跑版) -->
+  <!-- MODAL 2: 選擇本週起始日期 -->
   <div id="dateRangeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl space-y-4 transform transition-all overflow-hidden">
       <h3 class="font-bold text-slate-900 text-base">選擇本週起始日期</h3>
@@ -310,7 +330,6 @@
 
   <!-- JavaScript 邏輯控制 -->
   <script>
-    // 預設資料結構
     const DEFAULT_TARGET = 150;
     
     let appState = {
@@ -366,7 +385,7 @@
       ctx.fillStyle = '#38bdf8';
       ctx.fill();
 
-      // 轉為 Base64 PNG Data URI 避開 iOS 對 SVG icon 的不支援問題
+      // 轉為 Base64 PNG Data URI
       const dataUrl = canvas.toDataURL('image/png');
       
       const appleIconElem = document.getElementById('dynamicAppleIcon');
@@ -377,9 +396,7 @@
 
     // 頁面載入初始化
     window.onload = function() {
-      // 繪製並注入 iOS Apple Touch Icon
       generateAppleTouchIconPNG();
-
       loadStateFromStorage();
       
       if (!appState.startDate) {
@@ -387,12 +404,14 @@
       }
       
       const picker = document.getElementById('startDatePicker');
-      picker.addEventListener('change', function(e) {
-        if (e.target.value) {
-          const range = calculate7DaysRange(e.target.value);
-          document.getElementById('calculatedRangePreview').innerText = range.rangeStr;
-        }
-      });
+      if (picker) {
+        picker.addEventListener('change', function(e) {
+          if (e.target.value) {
+            const range = calculate7DaysRange(e.target.value);
+            document.getElementById('calculatedRangePreview').innerText = range.rangeStr;
+          }
+        });
+      }
 
       renderApp();
     };
@@ -657,8 +676,6 @@
       
       initDefaultWeek(nextStart);
       renderApp();
-
-      alert('結算完成！已開啟全新一週。');
     }
 
     function renderHistoryList() {
@@ -713,8 +730,6 @@
         saveStateToStorage();
         renderApp();
         closeTargetModal();
-      } else {
-        alert('請輸入有效的數字');
       }
     }
 
@@ -736,8 +751,6 @@
         saveStateToStorage();
         renderApp();
         closeDateRangeModal();
-      } else {
-        alert('請選擇有效的日期');
       }
     }
 
