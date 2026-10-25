@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Weekly Fit - 每週運動追蹤</title>
 
-  <!-- iOS 主畫面圖示 (Apple Touch Icon): 深色背景 + 心電圖/脈搏圖案 SVG -->
-  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%230f172a'/><path d='M25 90 H55 L68 55 L85 125 L102 70 L115 90 H155' stroke='%2338bdf8' stroke-width='10' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='85' cy='125' r='4' fill='%2338bdf8'/></svg>">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f172a'/><path d='M15 50 H32 L40 30 L50 70 L60 40 L67 50 H85' stroke='%2338bdf8' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
-
-  <!-- Web App 相關設定 -->
+  <!-- Web App 相關設定 (iOS PWA) -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Weekly Fit">
+
+  <!-- 動態 Apple Touch Icon 與 Favicon 載入 Anchor -->
+  <link id="dynamicAppleIcon" rel="apple-touch-icon" sizes="180x180" href="">
+  <link id="dynamicFavicon" rel="icon" type="image/png" href="">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -21,11 +21,17 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    *, ::before, ::after {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
       background-color: #f8fafc;
     }
+
     /* 針對 iOS 調整 input 安全性與樣式 */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
@@ -34,6 +40,19 @@
     }
     input[type="number"] {
       -moz-appearance: textfield;
+    }
+
+    /* 徹底修正 iOS Safari 原生 <input type="date"> 寬度溢出與跑版問題 */
+    input[type="date"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      display: block;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      background-color: #f8fafc;
+      min-height: 44px;
     }
   </style>
 </head>
@@ -206,7 +225,6 @@
                 <button type="button" onclick="quickAddMinutes(60)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs border border-slate-200">+60</button>
               </div>
             </div>
-            <!-- 指定 iOS 數字鍵盤 inputmode="numeric" / pattern="[0-9]*" -->
             <input type="number" id="recordMinutesInput" inputmode="numeric" pattern="[0-9]*" min="1" max="1000" placeholder="例如：30" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-800">
           </div>
 
@@ -252,13 +270,12 @@
 
   </main>
 
-  <!-- MODAL 1: 編輯每週目標 (純數字鍵盤) -->
+  <!-- MODAL 1: 編輯每週目標 -->
   <div id="targetModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl space-y-4 transform transition-all">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl space-y-4 transform transition-all overflow-hidden">
       <h3 class="font-bold text-slate-900 text-base">設定每週目標分鐘數</h3>
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">目標分鐘數</label>
-        <!-- inputmode="numeric" 讓 iPhone 直接開啟純數字鍵盤 -->
         <input type="number" id="targetModalInput" inputmode="numeric" pattern="[0-9]*" min="10" max="5000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-base font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white">
       </div>
       <div class="flex justify-end gap-2 pt-2">
@@ -268,20 +285,20 @@
     </div>
   </div>
 
-  <!-- MODAL 2: 選擇本週起始日期 (日曆選擇器) -->
+  <!-- MODAL 2: 選擇本週起始日期 (修正溢出與跑版) -->
   <div id="dateRangeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl space-y-4 transform transition-all">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl space-y-4 transform transition-all overflow-hidden">
       <h3 class="font-bold text-slate-900 text-base">選擇本週起始日期</h3>
-      <p class="text-xs text-slate-500">選擇一天的日期，系統將自動計算並設定 7 天的時間區間。</p>
+      <p class="text-xs text-slate-500 leading-relaxed">選擇一天的日期，系統將自動計算並設定 7 天的時間區間。</p>
       
-      <div>
+      <div class="w-full overflow-hidden">
         <label class="block text-xs font-medium text-slate-500 mb-1">起始日期</label>
         <input type="date" id="startDatePicker" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white">
       </div>
 
       <div class="p-3 bg-sky-50 rounded-xl border border-sky-100 text-xs text-sky-800 space-y-1">
         <span class="font-medium block">自動生成時間區間：</span>
-        <span id="calculatedRangePreview" class="font-bold">2026/10/25 ~ 2026/10/31</span>
+        <span id="calculatedRangePreview" class="font-bold block">2026/10/25 ~ 2026/10/31</span>
       </div>
 
       <div class="flex justify-end gap-2 pt-1">
@@ -296,25 +313,79 @@
     // 預設資料結構
     const DEFAULT_TARGET = 150;
     
-    // 初始化應用程式 State
     let appState = {
       targetMinutes: DEFAULT_TARGET,
       startDate: '', // YYYY-MM-DD
       endDate: '',   // YYYY-MM-DD
-      records: [],   // { id, dateStr, dayOfWeek, type, zone, minutes, note, timestamp }
-      history: []    // [ { id, rangeStr, targetMinutes, totalMinutes, records, archivedAt } ]
+      records: [],
+      history: []
     };
+
+    // 使用 HTML5 Canvas 動態繪製與生成 iOS 相容的 PNG 主畫面 Apple Touch Icon
+    function generateAppleTouchIconPNG() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 180;
+      canvas.height = 180;
+      const ctx = canvas.getContext('2d');
+
+      // 1. 繪製深圓角背景 (Dark Slate #0f172a)
+      const radius = 40;
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(180 - radius, 0);
+      ctx.quadraticCurveTo(180, 0, 180, radius);
+      ctx.lineTo(180, 180 - radius);
+      ctx.quadraticCurveTo(180, 180, 180 - radius, 180);
+      ctx.lineTo(radius, 180);
+      ctx.quadraticCurveTo(0, 180, 0, 180 - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+
+      // 2. 繪製心電圖/脈搏波形 (Sky Blue #38bdf8)
+      ctx.beginPath();
+      ctx.moveTo(25, 90);
+      ctx.lineTo(55, 90);
+      ctx.lineTo(68, 55);
+      ctx.lineTo(85, 125);
+      ctx.lineTo(102, 70);
+      ctx.lineTo(115, 90);
+      ctx.lineTo(155, 90);
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // 3. 波峰亮點
+      ctx.beginPath();
+      ctx.arc(85, 125, 4, 0, 2 * Math.PI);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fill();
+
+      // 轉為 Base64 PNG Data URI 避開 iOS 對 SVG icon 的不支援問題
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      const appleIconElem = document.getElementById('dynamicAppleIcon');
+      const faviconElem = document.getElementById('dynamicFavicon');
+      if (appleIconElem) appleIconElem.href = dataUrl;
+      if (faviconElem) faviconElem.href = dataUrl;
+    }
 
     // 頁面載入初始化
     window.onload = function() {
+      // 繪製並注入 iOS Apple Touch Icon
+      generateAppleTouchIconPNG();
+
       loadStateFromStorage();
       
-      // 如果是第一次使用，自動初始化本週（預設從今天或當前週日/週一開始）
       if (!appState.startDate) {
         initDefaultWeek(new Date());
       }
       
-      // 綁定日期選擇器監聽事件，同步預覽區間
       const picker = document.getElementById('startDatePicker');
       picker.addEventListener('change', function(e) {
         if (e.target.value) {
@@ -326,7 +397,6 @@
       renderApp();
     };
 
-    // 從 LocalStorage 載入資料
     function loadStateFromStorage() {
       const saved = localStorage.getItem('weekly_fit_state_v2');
       if (saved) {
@@ -338,12 +408,10 @@
       }
     }
 
-    // 儲存至 LocalStorage
     function saveStateToStorage() {
       localStorage.setItem('weekly_fit_state_v2', JSON.stringify(appState));
     }
 
-    // 計算 7 天的時間區間 (傳入 YYYY-MM-DD string)
     function calculate7DaysRange(startDateString) {
       const start = new Date(startDateString);
       const end = new Date(start);
@@ -366,7 +434,6 @@
       };
     }
 
-    // 初始化新的預設週
     function initDefaultWeek(baseDate) {
       const year = baseDate.getFullYear();
       const month = String(baseDate.getMonth() + 1).padStart(2, '0');
@@ -380,7 +447,6 @@
       saveStateToStorage();
     }
 
-    // 主渲染函式
     function renderApp() {
       renderCurrentOverview();
       renderDateDropdownOptions();
@@ -388,12 +454,10 @@
       renderHistoryList();
     }
 
-    // 渲染本週概況卡片
     function renderCurrentOverview() {
       const range = calculate7DaysRange(appState.startDate);
       document.getElementById('currentWeekRangeDisplay').innerText = range.rangeStr;
 
-      // 計算總分鐘數
       const totalMinutes = appState.records.reduce((sum, r) => sum + Number(r.minutes), 0);
       const totalHours = (totalMinutes / 60).toFixed(1);
 
@@ -401,7 +465,6 @@
       document.getElementById('currentTotalHours').innerText = `(${totalHours} 小時)`;
       document.getElementById('targetMinutesDisplay').innerText = appState.targetMinutes;
 
-      // 剩餘分鐘數
       const remaining = appState.targetMinutes - totalMinutes;
       const remainingElem = document.getElementById('remainingMinutesDisplay');
       if (remaining > 0) {
@@ -412,16 +475,13 @@
         remainingElem.className = 'text-emerald-600 font-bold';
       }
 
-      // 進度百分比
       const percent = appState.targetMinutes > 0 ? Math.min(Math.round((totalMinutes / appState.targetMinutes) * 100), 100) : 0;
       document.getElementById('progressPercent').innerText = `${percent}%`;
       document.getElementById('progressCircle').setAttribute('stroke-dasharray', `${percent}, 100`);
 
-      // 渲染 Zone 心率分佈條
       renderZoneBar(totalMinutes);
     }
 
-    // 心率區間比例條渲染
     function renderZoneBar(totalMinutes) {
       const zoneMinutes = { 'Zone 1': 0, 'Zone 2': 0, 'Zone 3': 0, 'Zone 4': 0, 'Zone 5': 0 };
       appState.records.forEach(r => {
@@ -446,7 +506,6 @@
       }
     }
 
-    // 渲染「新增運動紀錄」中的「日期下拉選單」
     function renderDateDropdownOptions() {
       const selectElem = document.getElementById('recordDateSelect');
       selectElem.innerHTML = '';
@@ -463,7 +522,6 @@
         const d = String(cur.getDate()).padStart(2, '0');
         const dayOfWeek = dayNames[cur.getDay()];
 
-        // 格式化顯示：2026/10/25 (日)
         const dateDisplay = `${y}/${m}/${d} (${dayOfWeek})`;
         const optionVal = `${y}/${m}/${d}`;
 
@@ -476,7 +534,6 @@
       }
     }
 
-    // 新增紀錄處理
     function handleAddRecord(e) {
       e.preventDefault();
 
@@ -506,23 +563,20 @@
         timestamp: Date.now()
       };
 
-      appState.records.unshift(newRecord); // 最新紀錄排前面
+      appState.records.unshift(newRecord);
       saveStateToStorage();
       renderApp();
 
-      // 清空部分輸入
       document.getElementById('recordMinutesInput').value = '';
       document.getElementById('recordNoteInput').value = '';
     }
 
-    // 快速加總分鐘按鈕
     function quickAddMinutes(val) {
       const input = document.getElementById('recordMinutesInput');
       const current = parseInt(input.value, 10) || 0;
       input.value = current + val;
     }
 
-    // 渲染本週運動明細
     function renderRecordsList() {
       const container = document.getElementById('recordsList');
       const badge = document.getElementById('recordsCountBadge');
@@ -544,7 +598,6 @@
         const item = document.createElement('div');
         item.className = 'flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/70 transition';
 
-        // 根據 Zone 著色
         let zoneBadgeClass = 'bg-slate-200 text-slate-700';
         if (rec.zone === 'Zone 2') zoneBadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200';
         if (rec.zone === 'Zone 3') zoneBadgeClass = 'bg-amber-100 text-amber-800 border border-amber-200';
@@ -571,23 +624,17 @@
       });
     }
 
-    // 刪除單筆紀錄
     function deleteRecord(id) {
       appState.records = appState.records.filter(r => r.id !== id);
       saveStateToStorage();
       renderApp();
     }
 
-    // 結算並開始新的一週
     function archiveCurrentWeek() {
       if (appState.records.length === 0) {
-        if (!confirm('本週尚無任何運動紀錄，確定要直接歸檔並開始新的一週嗎？')) {
-          return;
-        }
+        if (!confirm('本週尚無任何運動紀錄，確定要直接歸檔並開始新的一週嗎？')) return;
       } else {
-        if (!confirm('確定要結算本週紀錄並存檔嗎？本週數據將移至「歷史歸檔」。')) {
-          return;
-        }
+        if (!confirm('確定要結算本週紀錄並存檔嗎？本週數據將移至「歷史歸檔」。')) return;
       }
 
       const totalMinutes = appState.records.reduce((sum, r) => sum + Number(r.minutes), 0);
@@ -605,7 +652,6 @@
 
       appState.history.unshift(historyEntry);
 
-      // 自動推算下一週的起始日期 (目前 end 加上 1 天)
       const nextStart = new Date(appState.endDate);
       nextStart.setDate(nextStart.getDate() + 1);
       
@@ -615,7 +661,6 @@
       alert('結算完成！已開啟全新一週。');
     }
 
-    // 渲染歷史歸檔列表
     function renderHistoryList() {
       const container = document.getElementById('historyList');
       const badge = document.getElementById('historyBadge');
@@ -654,7 +699,6 @@
       });
     }
 
-    // MODAL - 目標分鐘數 (純數字鍵盤)
     function openTargetModal() {
       document.getElementById('targetModalInput').value = appState.targetMinutes;
       document.getElementById('targetModal').classList.remove('hidden');
@@ -674,7 +718,6 @@
       }
     }
 
-    // MODAL - 日期區間選擇 (日曆選擇器)
     function openDateRangeModal() {
       document.getElementById('startDatePicker').value = appState.startDate;
       const range = calculate7DaysRange(appState.startDate);
@@ -698,7 +741,6 @@
       }
     }
 
-    // 頁籤切換
     function switchTab(tab) {
       const currentView = document.getElementById('viewCurrent');
       const historyView = document.getElementById('viewHistory');
