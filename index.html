@@ -118,31 +118,12 @@
   </div>
 
   <div id="viewHistory" class="space-y-4 hidden">
-    <div id="histCardio" class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
-      <h2 class="text-sm font-bold mb-1 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4 text-sky-500"></i>有氧週紀錄</h2>
+    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+      <h2 class="text-sm font-bold mb-1 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4 text-sky-500"></i>歷史週紀錄</h2>
       <p id="streakText" class="text-xs text-slate-500 mb-3"></p>
       <div id="historyChart" class="flex items-end gap-1 h-20 mb-4"></div>
       <div id="historyList" class="space-y-3"></div>
     </div>
-    <div id="histOther" class="space-y-4">
-      <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-3">
-        <h2 class="text-sm font-bold flex items-center gap-2"><i data-lucide="calendar-check" class="w-4 h-4 text-sky-500"></i>其他運動紀錄</h2>
-        <div class="flex items-center justify-between"><button onclick="monthNav(-1)" aria-label="上個月" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold">‹</button><span id="monthLabel" class="text-sm font-bold"></span><button onclick="monthNav(1)" aria-label="下個月" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold">›</button></div>
-        <div id="monthSummary" class="text-xs text-slate-500"></div>
-        <div id="sportFilter" class="flex flex-wrap gap-1.5"></div>
-        <div id="sessionList" class="space-y-2"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="viewPlan" class="space-y-4 hidden">
-    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-3">
-      <div class="flex items-center justify-between"><button onclick="planNav(-1)" aria-label="上一週" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold">‹</button>
-        <div class="text-center"><div id="planRange" class="text-sm font-semibold text-slate-600"></div><div id="planCount" class="text-[11px] text-slate-400"></div></div>
-        <button onclick="planNav(1)" aria-label="下一週" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold">›</button></div>
-      <div class="text-center"><button onclick="copyLastWeek()" class="text-xs text-sky-600 bg-sky-50 px-3 py-2 rounded-lg font-semibold">複製上週行程到這週</button></div>
-    </div>
-    <div id="planList" class="space-y-3"></div>
   </div>
 </main>
 
@@ -157,11 +138,10 @@
 
 <!-- FAB -->
 <nav class="fixed inset-x-0 bottom-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200" style="padding-bottom:env(safe-area-inset-bottom)">
-  <div class="max-w-md mx-auto grid grid-cols-4 items-center px-4">
-    <button id="navCurrent" onclick="switchTab('current')"><i data-lucide="activity" class="w-6 h-6"></i>有氧</button>
-    <button id="navPlan" onclick="switchTab('plan')"><i data-lucide="calendar-check" class="w-6 h-6"></i>行程</button>
-    <button onclick="onFab()" aria-label="新增" class="mx-auto -mt-6 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center border-4 border-white"><i data-lucide="plus" class="w-7 h-7"></i></button>
-    <button id="navHistory" onclick="switchTab('history')"><span class="relative"><i data-lucide="history" class="w-6 h-6"></i><span id="historyBadge" class="absolute -top-1 -right-4 px-1.5 bg-slate-200 text-slate-600 rounded-full text-[10px]">0</span></span>運動總紀錄</button>
+  <div class="max-w-md mx-auto grid grid-cols-3 items-center px-4">
+    <button id="navCurrent" onclick="switchTab('current')"><i data-lucide="calendar-check" class="w-6 h-6"></i>本週</button>
+    <button onclick="openSheet()" aria-label="新增運動紀錄" class="mx-auto -mt-6 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center border-4 border-white"><i data-lucide="plus" class="w-7 h-7"></i></button>
+    <button id="navHistory" onclick="switchTab('history')"><span class="relative"><i data-lucide="history" class="w-6 h-6"></i><span id="historyBadge" class="absolute -top-1 -right-4 px-1.5 bg-slate-200 text-slate-600 rounded-full text-[10px]">0</span></span>歷史</button>
   </div>
 </nav>
 
@@ -191,24 +171,6 @@
     <div><label class="block text-xs font-semibold text-slate-600 mb-1">備註 (選填)</label>
       <input type="text" id="inNote" maxlength="100" placeholder="例如：坡度 6%、平均心率 138" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" /></div>
     <button type="submit" id="sheetSubmit" class="w-full py-3.5 bg-sky-500 active:bg-sky-700 text-white font-bold text-sm rounded-xl shadow-md"></button>
-  </form>
-</div>
-
-<!-- Session sheet -->
-<div id="sBg" onclick="closeSession()" class="fixed inset-0 bg-slate-900/40 z-40 hidden"></div>
-<div id="sSheet" role="dialog" aria-modal="true" class="sheet closed fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
-  <form onsubmit="saveSession(event)" class="max-w-md mx-auto p-5 space-y-3.5" style="padding-bottom:max(24px,env(safe-area-inset-bottom))">
-    <div class="flex justify-between items-center"><h2 id="sTitle" class="text-sm font-bold"></h2><button type="button" onclick="closeSession()" class="p-2 text-slate-400" aria-label="關閉"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">日期</label><input type="date" id="sDate" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" /></div>
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">運動種類</label><select id="sSport" onchange="onSportChange()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"></select></div>
-    </div>
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">狀態</label><select id="sStatus" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"><option value="planned">已安排</option><option value="done">已完成</option><option value="skipped">已略過</option></select></div>
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">時長 (分鐘，選填)</label><input type="number" id="sDur" inputmode="numeric" min="1" max="999" placeholder="例如：90" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" /></div>
-    </div>
-    <div><label class="block text-xs font-semibold text-slate-600 mb-1">備註 (選填)</label><input type="text" id="sNote" maxlength="100" placeholder="例如：晚上 8 點、場地 B" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" /></div>
-    <button type="submit" id="sSubmit" class="w-full py-3.5 bg-sky-500 active:bg-sky-700 text-white font-bold text-sm rounded-xl shadow-md"></button>
   </form>
 </div>
 
@@ -261,7 +223,7 @@ const lucide = {
     });
   },
 };
-const KEY = "WEEKLY_FIT_APP_DATA_V4", OLD_KEY = "WEEKLY_FIT_APP_DATA_V3";
+const KEY = "WEEKLY_FIT_APP_DATA_V3", OLD_KEY = "WEEKLY_FIT_APP_DATA_V2";
 const ZONES = [
   ["Zone 1", "#94a3b8", "bg-slate-200 text-slate-700", "熱身恢復 / <60% Max HR"],
   ["Zone 2", "#10b981", "bg-emerald-100 text-emerald-800", "最佳燃脂 / 60-70% Max HR"],
@@ -271,11 +233,9 @@ const ZONES = [
 ];
 const DEFAULT_TYPES = ["慢跑 / 超慢跑","快走 / 坡度走","飛輪 / 自行車","橢圓機 / 踏步機","划船機","游泳","重量訓練","其他運動"];
 const WEEK = ["日","一","二","三","四","五","六"];
-const DEFAULT_SPORTS = ["羽球", "重訓", "有氧", "其他運動"];
-const STATUS = { planned: ["已安排", "bg-sky-100 text-sky-700"], done: ["已完成", "bg-emerald-100 text-emerald-800"], skipped: ["已略過", "bg-slate-200 text-slate-700"] };
 const CIRC = 2 * Math.PI * 32;
 
-let appState = { v: 4, targetMinutes: 200, startDateStr: "", records: [], history: [], types: [...DEFAULT_TYPES], last: { type: DEFAULT_TYPES[0], zone: "Zone 2" }, lastBackup: null, sessions: [], sportTypes: [...DEFAULT_SPORTS] };
+let appState = { v: 3, targetMinutes: 200, startDateStr: "", records: [], history: [], types: [...DEFAULT_TYPES], last: { type: DEFAULT_TYPES[0], zone: "Zone 2" }, lastBackup: null };
 let editingId = null, toastTimer = null;
 
 /* ---------- 工具函式 ---------- */
@@ -296,92 +256,6 @@ function calcStats(recs) {
   return { total: sum(recs), zones };
 }
 
-/* ---------- 運動行程（與有氧完全獨立）---------- */
-let curTab = "current", planOff = 0, monthStr = today().slice(0, 7), sportF = "all", editingSid = null;
-const SW = () => addDays(appState.startDateStr, planOff * 7);
-const rnd = (n) => Math.round(n * 10) / 10;
-function onFab() { if (curTab === "plan" || curTab === "history") openSession(); else openSheet(); }
-function planNav(n) { planOff += n; renderApp(); }
-function monthNav(n) { const [y, m] = monthStr.split("-").map(Number), d = new Date(y, m - 1 + n, 1); monthStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; renderApp(); }
-function setSportF(k) { sportF = k; renderApp(); }
-
-function sessionCard(s, showDate) {
-  const st = STATUS[s.status], id = esc(s.id), b = "px-2.5 py-1.5 text-[11px] font-bold rounded-md ";
-  const btns = s.status === "planned"
-    ? `<button data-act="sst" data-st="done" data-id="${id}" class="${b}bg-emerald-100 text-emerald-800">完成</button><button data-act="sst" data-st="skipped" data-id="${id}" class="${b}bg-slate-200 text-slate-700">略過</button>`
-    : `<button data-act="sst" data-st="planned" data-id="${id}" class="px-2.5 py-1.5 text-[11px] text-slate-500 underline">還原為已安排</button>`;
-  return `<div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-2"><div class="flex items-start justify-between gap-2"><div class="min-w-0 space-y-1">
-    ${showDate ? `<div class="text-[11px] font-bold text-slate-500">${fmt(s.date).slice(5)} (${WEEK[parseDate(s.date).getDay()]})</div>` : ""}
-    <div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${st[1]}">${st[0]}</span><span class="text-sm font-semibold text-slate-700">${esc(s.sport)}</span>${s.duration ? `<span class="text-xs text-slate-500">${s.duration} 分</span>` : ""}</div>
-    ${s.note ? `<p class="text-xs text-slate-400 break-words">${esc(s.note)}</p>` : ""}</div>
-    <div class="flex items-center shrink-0"><button data-act="sedit" data-id="${id}" class="text-slate-400 hover:text-sky-500 p-2.5" aria-label="編輯"><i data-lucide="pencil" class="w-4 h-4"></i></button><button data-act="sdel" data-id="${id}" class="text-slate-300 hover:text-rose-500 p-2.5" aria-label="刪除"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>
-    <div class="flex gap-2">${btns}</div></div>`;
-}
-function renderPlan() {
-  const s0 = SW(), days = Array.from({ length: 7 }, (_, i) => addDays(s0, i)), all = appState.sessions.filter((x) => x.date >= s0 && x.date <= days[6]);
-  $("planRange").textContent = `${fmt(s0)} ~ ${fmt(days[6])}${planOff === 0 ? "（本週）" : ""}`;
-  $("planCount").textContent = `共 ${all.length} 筆 · 已完成 ${all.filter((x) => x.status === "done").length}`;
-  $("planList").innerHTML = days.map((d) => { const it = all.filter((x) => x.date === d);
-    return `<div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-2"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-600">${fmt(d).slice(5)} (${WEEK[parseDate(d).getDay()]})${d === today() ? " · 今天" : ""}</span><button data-act="sadd" data-date="${d}" class="text-xs text-sky-600 bg-sky-50 px-3 py-1.5 rounded-lg font-semibold">＋ 安排</button></div>${it.length ? it.map((x) => sessionCard(x)).join("") : `<p class="text-[11px] text-slate-400 px-1">尚未安排（休息日）</p>`}</div>`; }).join("");
-}
-function renderOther() {
-  const [y, m] = monthStr.split("-").map(Number);
-  $("monthLabel").textContent = `${y} 年 ${m} 月`;
-  const inM = appState.sessions.filter((x) => x.date.startsWith(monthStr) && x.status !== "planned"), done = inM.filter((x) => x.status === "done"), by = {};
-  done.forEach((x) => (by[x.sport] = (by[x.sport] || 0) + 1));
-  $("monthSummary").innerHTML = done.length ? `完成 <b class="text-slate-800">${done.length}</b> 次 · <b class="text-slate-800">${rnd(sum(done) / 60)}</b> 小時<br>` + Object.entries(by).map(([k, v]) => `${esc(k)} ${v} 次`).join(" · ") : "本月尚無完成紀錄";
-  $("sportFilter").innerHTML = ["all", ...appState.sportTypes].map((k) => `<button onclick="setSportF(this.dataset.k)" data-k="${esc(k)}" class="px-3 py-1.5 rounded-full text-[11px] font-bold ${k === sportF ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-600"}">${k === "all" ? "全部" : esc(k)}</button>`).join("");
-  const list = inM.filter((x) => sportF === "all" || x.sport === sportF).sort((a, b) => b.date.localeCompare(a.date));
-  $("sessionList").innerHTML = list.length ? list.map((x) => sessionCard(x, true)).join("") : `<div class="py-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">沒有符合的紀錄</div>`;
-}
-
-/* 新增 / 編輯行程 */
-function fillSport(sel) {
-  const t = appState.sportTypes.includes(sel) ? appState.sportTypes : [...appState.sportTypes, sel];
-  $("sSport").innerHTML = t.map((k) => `<option value="${esc(k)}" ${k === sel ? "selected" : ""}>${esc(k)}</option>`).join("") + `<option value="__new__">＋ 新增種類…</option>`;
-}
-function onSportChange() {
-  const el = $("sSport"); if (el.value !== "__new__") return;
-  const n = (prompt("輸入新的運動種類名稱：") || "").trim().slice(0, 20);
-  if (n) { if (!appState.sportTypes.includes(n)) appState.sportTypes.push(n); fillSport(n); } else el.selectedIndex = 0;
-}
-function openSession(id, date, st) {
-  const rec = id ? appState.sessions.find((x) => x.id === id) : null;
-  editingSid = rec ? rec.id : null;
-  $("sDate").value = rec ? rec.date : date || (curTab === "plan" && planOff ? SW() : today());
-  fillSport(rec ? rec.sport : appState.sportTypes[0]);
-  $("sStatus").value = st || (rec ? rec.status : $("sDate").value < today() ? "done" : "planned");
-  $("sDur").value = rec && rec.duration ? rec.duration : ""; $("sNote").value = rec ? rec.note : "";
-  $("sTitle").textContent = rec ? "編輯運動行程" : "新增運動行程"; $("sSubmit").textContent = rec ? "儲存修改" : "加入行程";
-  $("sBg").classList.remove("hidden"); $("sSheet").classList.remove("closed");
-}
-function closeSession() { $("sSheet").classList.add("closed"); $("sBg").classList.add("hidden"); editingSid = null; }
-function saveSession(e) {
-  e.preventDefault();
-  const sport = $("sSport").value; if (sport === "__new__" || !$("sDate").value) return;
-  const data = { date: $("sDate").value, sport, status: $("sStatus").value, duration: parseInt($("sDur").value, 10) || 0, note: $("sNote").value.trim() };
-  if (editingSid) Object.assign(appState.sessions.find((x) => x.id === editingSid), data); else appState.sessions.push({ id: Date.now().toString(), ...data });
-  showToast(editingSid ? "已更新行程" : "已加入行程");
-  if (curTab === "plan") planOff = Math.floor(Math.round((parseDate(data.date) - parseDate(appState.startDateStr)) / 864e5) / 7);
-  save(); renderApp(); closeSession();
-}
-function setStatus(id, st) {
-  const s = appState.sessions.find((x) => x.id === id); if (!s) return;
-  s.status = st; save(); renderApp();
-}
-function deleteSession(id) {
-  const i = appState.sessions.findIndex((x) => x.id === id); if (i < 0) return;
-  const [r] = appState.sessions.splice(i, 1); save(); renderApp();
-  showToast("已刪除行程", () => { appState.sessions.splice(i, 0, r); save(); renderApp(); });
-}
-function copyLastWeek() {
-  const s0 = SW(), p0 = addDays(s0, -7), src = appState.sessions.filter((x) => x.date >= p0 && x.date < s0);
-  if (!src.length) { showToast("上週沒有可複製的行程"); return; }
-  if (!confirm(`將上週 ${src.length} 筆行程複製到這一週（狀態為「已安排」）？`)) return;
-  src.forEach((x, i) => appState.sessions.push({ ...x, id: Date.now() + "_" + i, date: addDays(x.date, 7), status: "planned" }));
-  save(); renderApp(); showToast(`已複製 ${src.length} 筆行程`);
-}
-
 /* ---------- 儲存 ---------- */
 function save() { try { localStorage.setItem(KEY, JSON.stringify(appState)); } catch (e) { showToast("⚠️ 儲存失敗（可能是無痕模式或空間已滿）"); } }
 function sanitize(d) {
@@ -399,15 +273,12 @@ function sanitize(d) {
   });
   out.types = Array.isArray(d.types) && d.types.length ? d.types.map(String) : [...DEFAULT_TYPES];
   out.last = d.last && typeof d.last === "object" ? d.last : appState.last;
-  out.sportTypes = Array.isArray(d.sportTypes) && d.sportTypes.length ? d.sportTypes.map(String) : [...DEFAULT_SPORTS];
-  if (!out.sportTypes.includes("有氧")) { const i = out.sportTypes.indexOf("其他運動"); out.sportTypes.splice(i < 0 ? out.sportTypes.length : i, 0, "有氧"); }
-  out.sessions = (Array.isArray(d.sessions) ? d.sessions : []).filter((x) => x && /^\d{4}-\d{2}-\d{2}$/.test(x.date)).map((x) => ({ id: String(x.id || Date.now() + Math.random()), date: x.date, sport: String(x.sport || "其他運動"), status: STATUS[x.status] ? x.status : "planned", duration: Number(x.duration) > 0 ? Number(x.duration) : 0, note: String(x.note || "") }));
   out.lastBackup = d.lastBackup || null;
   return out;
 }
 function load() {
   let raw = null;
-  try { raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY) || localStorage.getItem("WEEKLY_FIT_APP_DATA_V2"); } catch (e) {}
+  try { raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch (e) {}
   if (raw) { try { appState = sanitize(JSON.parse(raw)); } catch (e) {} }
   if (!appState.startDateStr) appState.startDateStr = today();
 }
@@ -455,7 +326,7 @@ function renderApp() {
   $("zoneLegend").innerHTML = ZONES.map((z) => `<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${z[1]}"></span>Z${z[0].slice(-1)} ${zones[z[0]]}分</span>`).join("");
   $("zoneText").textContent = total ? "" : "尚無紀錄";
 
-  renderRecords(); renderHistory(); renderPlan(); renderOther();
+  renderRecords(); renderHistory();
   $("historyBadge").textContent = appState.history.length;
   const lb = appState.lastBackup;
   $("backupInfo").textContent = lb ? `上次備份：${fmt(lb)}${(parseDate(today()) - parseDate(lb)) / 864e5 > 14 ? "（已超過 14 天，建議備份）" : ""}` : "尚未備份過";
@@ -508,15 +379,11 @@ function renderHistory() {
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const id = b.dataset.id;
-  if (b.dataset.act === "sadd") openSession(null, b.dataset.date);
-  if (b.dataset.act === "sedit") openSession(id);
-  if (b.dataset.act === "sdel") deleteSession(id);
-  if (b.dataset.act === "sst") setStatus(id, b.dataset.st);
   if (b.dataset.act === "edit") openSheet(id);
   if (b.dataset.act === "del") deleteRecord(id);
   if (b.dataset.act === "delhist" && confirm("確定刪除這一週的歷史紀錄？")) { appState.history = appState.history.filter((w) => w.id !== id); save(); renderApp(); }
 });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeSheet(); closeSession(); closeGoalModal(); closeDateModal(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeSheet(); closeGoalModal(); closeDateModal(); } });
 
 /* ---------- 新增 / 編輯 Sheet ---------- */
 function fillSelects(rec) {
@@ -580,10 +447,10 @@ function archiveCurrentWeek() {
   save(); renderApp();
 }
 function switchTab(tab) {
-  curTab = tab;
-  [["current", "viewCurrent", "navCurrent"], ["plan", "viewPlan", "navPlan"], ["history", "viewHistory", "navHistory"]].forEach(([t, v, n]) => {
-    $(v).classList.toggle("hidden", t !== tab);
-    $(n).className = "flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold " + (t === tab ? "text-sky-500" : "text-slate-400");
+  $("viewCurrent").classList.toggle("hidden", tab !== "current");
+  $("viewHistory").classList.toggle("hidden", tab !== "history");
+  [["current", "navCurrent"], ["history", "navHistory"]].forEach(([t, id]) => {
+    $(id).className = "flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold " + (t === tab ? "text-sky-500" : "text-slate-400");
   });
   window.scrollTo({ top: 0 });
 }
