@@ -6,35 +6,38 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Weekly Fit" />
-<title>Weekly Fit - 週運動目標追蹤</title>
+<title>Weekly Fit</title>
 <link id="app-favicon" rel="icon" type="image/png" href="" />
 <link id="apple-touch-icon" rel="apple-touch-icon" href="" />
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>(function(){var t=null;try{t=localStorage.getItem("WF_THEME")}catch(e){}var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)})()</script>
 <style>
-  body{
-    padding-top:calc(max(env(safe-area-inset-top,0px),47px) + 28px);
-    padding-bottom:max(110px,env(safe-area-inset-bottom));
-    padding-left:max(16px,env(safe-area-inset-left));
-    padding-right:max(16px,env(safe-area-inset-right));
-    -webkit-tap-highlight-color:transparent
-  }
-  /* 狀態列 / 動態島遮罩：捲動時內容不會滑進去 */
+  body{padding-top:calc(max(env(safe-area-inset-top,0px),47px) + 28px);padding-bottom:max(150px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));-webkit-tap-highlight-color:transparent}
   body::before{content:"";position:fixed;top:0;left:0;right:0;height:calc(max(env(safe-area-inset-top,0px),47px) + 8px);background:#f8fafc;z-index:20;pointer-events:none}
   html.dark body::before{background:#0f172a}
-
-  input,select{font-size:16px!important;border-radius:.75rem}
-  /* iOS 日期欄位跑版修正 */
+  input,select,textarea{font-size:16px!important;border-radius:.75rem}
   input[type="date"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;height:46px;box-sizing:border-box;text-align:center}
   input[type="date"]::-webkit-date-and-time-value{text-align:center;margin:0}
-
   select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:36px!important}
   .ring{transition:stroke-dashoffset .35s ease-in-out,stroke .3s;transform:rotate(-90deg);transform-origin:50% 50%}
-  .sheet{transition:transform .25s ease}
-  .sheet.closed{transform:translateY(100%)}
+  .sheet{transition:transform .25s ease}.sheet.closed{transform:translateY(100%)}
   details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
-
+  /* 訓練菜單：清單式輸入框 */
+  .pi{background:transparent;border:1px solid transparent;color:inherit;transition:background .15s,border-color .15s;outline:none}
+  .pi:focus{background:#f8fafc;border-color:#e2e8f0}
+  .pi.sm{font-size:14px!important}
+  .pr{transition:opacity .2s}
+  .pr.done{opacity:.55}
+  .pctl{opacity:.3;transition:opacity .15s}
+  .pr:focus-within .pctl{opacity:1}
+  .tg{display:inline-flex;align-items:center;padding:0 8px;border-radius:9999px;font-size:11px;font-weight:600;line-height:18px;white-space:nowrap;vertical-align:1px;background:#f1f5f9;color:#64748b}
+  .tgb{padding:5px 14px;font-size:13px;line-height:20px;border:1px solid #e2e8f0;background:transparent;color:#64748b;transition:background .15s,color .15s,border-color .15s}
+  .tgb.on{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
+  html.dark .tg{background:#334155;color:#cbd5e1}
+  html.dark .tgb{background:transparent;border-color:#475569;color:#94a3b8}
+  html.dark .tgb.on{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
   html.dark{color-scheme:dark;background:#0f172a}
+  html.dark .pi:focus{background:#0f172a;border-color:#334155}
   .dark .bg-white{background:#1e293b}.dark .bg-white\/95{background:rgba(30,41,59,.95)}
   .dark .bg-slate-50{background:#0f172a}.dark .bg-slate-100{background:#334155}.dark .bg-slate-200{background:#475569}
   .dark .text-slate-900,.dark .text-slate-800{color:#f1f5f9}.dark .text-slate-700{color:#e2e8f0}
@@ -56,456 +59,656 @@
 <div class="max-w-md mx-auto w-full mb-4">
   <header class="flex items-center justify-between bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sky-400"><i data-lucide="activity" class="w-6 h-6"></i></div>
-      <div><h1 class="text-lg font-bold leading-none">Weekly Fit</h1><span class="text-xs text-slate-400">離線自動儲存</span></div>
+      <div id="hico" class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sky-400"><i data-lucide="activity" class="w-6 h-6"></i></div>
+      <div><h1 id="ttl" class="text-lg font-bold leading-none">訓練菜單</h1><span id="hd" class="text-xs text-slate-400"></span></div>
     </div>
     <button id="themeBtn" onclick="toggleTheme()" aria-label="切換深色模式" class="p-2.5 rounded-xl bg-slate-100 text-slate-600"></button>
   </header>
 </div>
 
-<main class="max-w-md mx-auto w-full flex flex-col gap-4">
-  <div id="viewCurrent" class="space-y-4">
-    <div id="expiredBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 flex items-center justify-between gap-2">
-      <span>本週區間已結束，要結算並開始新的一週嗎？</span>
-      <button onclick="archiveCurrentWeek()" class="shrink-0 px-3 py-2 bg-amber-500 text-white rounded-lg font-bold">存檔</button>
+<main class="max-w-md mx-auto w-full">
+  <section id="v-plan"></section>
+  <section id="v-lib" class="hidden"></section>
+  <section id="v-log" class="hidden"></section>
+  <section id="v-week" class="hidden"></section>
+  <section id="v-cardio" class="hidden space-y-4">
+    <div id="seg" class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl text-sm font-semibold">
+      <button onclick="setSub('current')" data-s="current">本週</button><button onclick="setSub('history')" data-s="history">歷史</button>
     </div>
 
-    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
-      <div class="flex items-center justify-between mb-4">
-        <span id="displayWeekRange" class="text-sm font-semibold text-slate-600"></span>
-        <button onclick="openDateModal()" class="text-xs text-slate-600 bg-slate-100 px-3 py-2 rounded-lg font-medium">編輯日期</button>
+    <div id="viewCurrent" class="space-y-4">
+      <div id="expiredBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 flex items-center justify-between gap-2">
+        <span>本週區間已結束，要結算並開始新的一週嗎？</span>
+        <button onclick="archiveCurrentWeek()" class="shrink-0 px-3 py-2 bg-amber-500 text-white rounded-lg font-bold">存檔</button>
       </div>
-      <div class="flex items-center justify-between my-2">
-        <div>
-          <div class="flex items-baseline gap-1.5">
-            <span id="displayTotalMinutes" class="text-4xl font-black tracking-tight">0</span>
-            <span class="text-sm font-bold text-slate-500">分鐘</span>
-            <span id="displayHours" class="text-xs text-slate-400 ml-1"></span>
+      <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-4">
+          <span id="displayWeekRange" class="text-sm font-semibold text-slate-600"></span>
+          <button onclick="openDateModal()" class="text-xs text-slate-600 bg-slate-100 px-3 py-2 rounded-lg font-medium">編輯日期</button>
+        </div>
+        <div class="flex items-center justify-between my-2">
+          <div>
+            <div class="flex items-baseline gap-1.5">
+              <span id="displayTotalMinutes" class="text-4xl font-black tracking-tight">0</span>
+              <span class="text-sm font-bold text-slate-500">分鐘</span>
+              <span id="displayHours" class="text-xs text-slate-400 ml-1"></span>
+            </div>
+            <div class="mt-2 flex items-center gap-2 text-xs text-slate-500">目標：<strong id="displayTargetMinutes" class="text-slate-800"></strong> 分鐘
+              <button onclick="openGoalModal()" class="text-sky-600 bg-sky-50 px-3 py-1.5 rounded font-semibold">編輯</button>
+            </div>
           </div>
-          <div class="mt-2 flex items-center gap-2 text-xs text-slate-500">目標：<strong id="displayTargetMinutes" class="text-slate-800"></strong> 分鐘
-            <button onclick="openGoalModal()" class="text-sky-600 bg-sky-50 px-3 py-1.5 rounded font-semibold">編輯</button>
+          <div class="relative w-20 h-20 flex items-center justify-center">
+            <svg class="w-20 h-20">
+              <circle class="ring-bg" stroke="#f1f5f9" stroke-width="6" fill="transparent" r="32" cx="40" cy="40"/>
+              <circle id="progressCircle" class="ring" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round" fill="transparent" r="32" cx="40" cy="40"/>
+            </svg>
+            <span id="displayPercentage" class="absolute text-xs font-black"></span>
           </div>
         </div>
-        <div class="relative w-20 h-20 flex items-center justify-center">
-          <svg class="w-20 h-20">
-            <circle class="ring-bg" stroke="#f1f5f9" stroke-width="6" fill="transparent" r="32" cx="40" cy="40"/>
-            <circle id="progressCircle" class="ring" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round" fill="transparent" r="32" cx="40" cy="40"/>
-          </svg>
-          <span id="displayPercentage" class="absolute text-xs font-black"></span>
+        <div id="statusMessage" class="text-xs font-medium text-slate-500 mb-3"></div>
+        <div class="mb-3"><div class="text-[11px] text-slate-400 mb-1">每日分鐘</div><div id="dayStrip" class="grid grid-cols-7 gap-1"></div></div>
+        <div class="space-y-2 border-t border-slate-100 pt-3">
+          <div class="flex justify-between text-xs"><span class="font-semibold text-slate-600">心率區間分佈</span><span id="zoneText" class="text-slate-400 text-[11px]"></span></div>
+          <div id="zoneBar" class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex"></div>
+          <div id="zoneLegend" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500"></div>
         </div>
+        <div class="mt-4 text-center"><button onclick="archiveCurrentWeek()" class="text-xs text-slate-500 underline py-2 px-3">結算本週並開始新的一週</button></div>
       </div>
-      <div id="statusMessage" class="text-xs font-medium text-slate-500 mb-3"></div>
-
-      <div class="mb-3">
-        <div class="text-[11px] text-slate-400 mb-1">每日分鐘</div>
-        <div id="dayStrip" class="grid grid-cols-7 gap-1"></div>
-      </div>
-
-      <div class="space-y-2 border-t border-slate-100 pt-3">
-        <div class="flex justify-between text-xs"><span class="font-semibold text-slate-600">心率區間分佈</span><span id="zoneText" class="text-slate-400 text-[11px]"></span></div>
-        <div id="zoneBar" class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex"></div>
-        <div id="zoneLegend" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500"></div>
-      </div>
-      <div class="mt-4 text-center">
-        <button onclick="archiveCurrentWeek()" class="text-xs text-slate-500 underline py-2 px-3">結算本週並開始新的一週</button>
+      <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider flex justify-between"><span>本週明細</span><span id="recordCountTag" class="text-slate-400 font-normal"></span></h3>
+        <div id="recordsList" class="space-y-3"></div>
       </div>
     </div>
 
-    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-3">
-      <h3 class="text-xs font-bold uppercase tracking-wider flex justify-between"><span>本週明細</span><span id="recordCountTag" class="text-slate-400 font-normal"></span></h3>
-      <div id="recordsList" class="space-y-3"></div>
+    <div id="viewHistory" class="space-y-4 hidden">
+      <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+        <h2 class="text-sm font-bold mb-1">歷史週紀錄</h2>
+        <p id="streakText" class="text-xs text-slate-500 mb-3"></p>
+        <div id="historyChart" class="flex items-end gap-1 h-20 mb-4"></div>
+        <div id="historyList" class="space-y-3"></div>
+      </div>
     </div>
-  </div>
-
-  <div id="viewHistory" class="space-y-4 hidden">
-    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
-      <h2 class="text-sm font-bold mb-1 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4 text-sky-500"></i>歷史週紀錄</h2>
-      <p id="streakText" class="text-xs text-slate-500 mb-3"></p>
-      <div id="historyChart" class="flex items-end gap-1 h-20 mb-4"></div>
-      <div id="historyList" class="space-y-3"></div>
-    </div>
-  </div>
+  </section>
 </main>
 
-<footer class="max-w-md mx-auto w-full mt-6 text-center text-xs text-slate-400 space-y-2">
-  <div class="flex items-center justify-center gap-3">
-    <button onclick="exportDataJSON()" class="underline py-1">匯出備份</button><span>•</span>
-    <label class="underline cursor-pointer py-1">匯入備份<input type="file" id="importFileInput" accept=".json" onchange="importDataJSON(event)" class="hidden" /></label>
-  </div>
-  <p id="backupInfo"></p>
-  <p>© Weekly Fit • 數據保存在本機裝置</p>
+<footer class="max-w-md mx-auto w-full mt-6 text-center text-xs text-slate-400 space-y-1">
+  <button onclick="openBk()" class="underline py-1">備份 / 還原</button>
+  <p id="backupInfo"></p><p>數據保存在本機裝置</p>
 </footer>
 
-<!-- FAB -->
+
+
+<button id="lbtn" onclick="go(tab==='lib'?'plan':'lib')" aria-label="動作庫" class="hidden fixed right-4 z-30 w-12 h-12 rounded-full bg-white border border-slate-200 text-sky-600 shadow-lg items-center justify-center" style="bottom:calc(84px + env(safe-area-inset-bottom))"><i data-lucide="book" class="w-6 h-6"></i></button>
+<button id="tbtn" onclick="togglePanel()" aria-label="休息計時器" class="hidden fixed right-4 z-30 h-12 min-w-[3rem] px-3 rounded-full bg-white border border-slate-200 text-sky-600 shadow-lg items-center justify-center" style="bottom:calc(84px + env(safe-area-inset-bottom))"><span id="tbi"><i data-lucide="timer" class="w-6 h-6"></i></span><span id="tbt" class="hidden text-sm font-black tabular-nums"></span></button>
+<div id="tpanel" class="hidden fixed right-4 z-40 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 space-y-3" style="bottom:calc(144px + env(safe-area-inset-bottom))">
+  <div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-600">休息計時器</span><button onclick="togglePanel()" class="p-1 text-slate-400" aria-label="收合"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+  <div id="tm" class="text-4xl font-black text-center tracking-tight tabular-nums">0:00</div>
+  <div class="grid grid-cols-4 gap-1.5"><button data-a="t" data-s="60" class="py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold">1:00</button><button data-a="t" data-s="90" class="py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold">1:30</button><button data-a="t" data-s="120" class="py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold">2:00</button><button data-a="t" data-s="180" class="py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold">3:00</button></div>
+  <div class="flex gap-2"><input id="cs" type="number" inputmode="numeric" placeholder="自訂秒數" class="w-full min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-sm"><button data-a="tc" class="shrink-0 px-3 rounded-xl bg-sky-500 text-white text-sm font-bold">開始</button><button data-a="ts" class="shrink-0 px-3 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold">停止</button></div>
+</div>
 <nav class="fixed inset-x-0 bottom-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200" style="padding-bottom:env(safe-area-inset-bottom)">
-  <div class="max-w-md mx-auto grid grid-cols-3 items-center px-4">
-    <button id="navCurrent" onclick="switchTab('current')"><i data-lucide="calendar-check" class="w-6 h-6"></i>本週</button>
-    <button onclick="openSheet()" aria-label="新增運動紀錄" class="mx-auto -mt-6 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center border-4 border-white"><i data-lucide="plus" class="w-7 h-7"></i></button>
-    <button id="navHistory" onclick="switchTab('history')"><span class="relative"><i data-lucide="history" class="w-6 h-6"></i><span id="historyBadge" class="absolute -top-1 -right-4 px-1.5 bg-slate-200 text-slate-600 rounded-full text-[10px]">0</span></span>歷史</button>
-  </div>
+  <div id="nav" class="max-w-md mx-auto grid grid-cols-5 items-center px-2"></div>
 </nav>
 
-<!-- Add / Edit bottom sheet -->
+<!-- 有氧新增 / 編輯 -->
 <div id="sheetBg" onclick="closeSheet()" class="fixed inset-0 bg-slate-900/40 z-40 hidden"></div>
-<div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" class="sheet closed fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+<div id="sheet" role="dialog" aria-modal="true" class="sheet closed fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
   <form id="recordForm" onsubmit="handleSaveRecord(event)" class="max-w-md mx-auto p-5 space-y-3.5" style="padding-bottom:max(24px,env(safe-area-inset-bottom))">
     <div class="flex justify-between items-center">
       <h2 id="sheetTitle" class="text-sm font-bold"></h2>
       <button type="button" onclick="closeSheet()" class="p-2 text-slate-400" aria-label="關閉"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
     <div class="grid grid-cols-2 gap-3">
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">日期</label>
-        <select id="inDate" required class="w-full pl-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"></select></div>
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">運動種類</label>
-        <select id="inType" required onchange="onTypeChange()" class="w-full pl-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"></select></div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">日期</label><select id="inDate" required class="w-full pl-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"></select></div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">運動種類</label><select id="inType" required onchange="onTypeChange()" class="w-full pl-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"></select></div>
     </div>
-    <div><label class="block text-xs font-semibold text-slate-600 mb-1">心率區間</label>
-      <select id="inZone" required class="w-full pl-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"></select></div>
+    <div><label class="block text-xs font-semibold text-slate-600 mb-1">心率區間</label><select id="inZone" required onchange="syncDur()" class="w-full pl-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium"></select></div>
     <div>
-      <div class="flex justify-between items-center mb-1.5">
-        <label class="text-xs font-semibold text-slate-600">時長 (分鐘)</label>
-        <div id="quickBtns" class="flex gap-1.5"></div>
-      </div>
+      <div class="flex justify-between items-center mb-1.5"><label class="text-xs font-semibold text-slate-600">時長 (分鐘)</label><div id="quickBtns" class="flex gap-1.5"></div></div>
       <input type="number" id="inDur" inputmode="numeric" min="1" max="999" placeholder="例如：40" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" />
     </div>
-    <div><label class="block text-xs font-semibold text-slate-600 mb-1">備註 (選填)</label>
-      <input type="text" id="inNote" maxlength="100" placeholder="例如：坡度 6%、平均心率 138" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" /></div>
+    <div><label class="block text-xs font-semibold text-slate-600 mb-1">備註 (選填)</label><input type="text" id="inNote" maxlength="100" placeholder="例如：坡度 6%、平均心率 138" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs font-medium" /></div>
     <button type="submit" id="sheetSubmit" class="w-full py-3.5 bg-sky-500 active:bg-sky-700 text-white font-bold text-sm rounded-xl shadow-md"></button>
   </form>
 </div>
 
 <!-- Modals -->
-<div id="goalModal" role="dialog" aria-modal="true" onclick="if(event.target===this)closeGoalModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+<div id="goalModal" onclick="if(event.target===this)closeGoalModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
   <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4">
     <h3 class="text-sm font-bold">修改每週目標分鐘數</h3>
     <input type="number" id="modalGoalInput" inputmode="numeric" min="10" max="2000" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 font-bold" />
-    <div class="flex gap-2 justify-end">
-      <button onclick="closeGoalModal()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button>
-      <button onclick="saveGoalModal()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">確認修改</button>
-    </div>
+    <div class="flex gap-2 justify-end"><button onclick="closeGoalModal()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button><button onclick="saveGoalModal()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">確認修改</button></div>
   </div>
 </div>
-<div id="dateModal" role="dialog" aria-modal="true" onclick="if(event.target===this)closeDateModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+<div id="dateModal" onclick="if(event.target===this)closeDateModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
   <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4">
     <h3 class="text-sm font-bold">選擇本週起始日期</h3>
     <input type="date" id="modalStartDateInput" onchange="updateModalRangePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 font-medium" />
     <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-100 text-xs"><span class="text-sky-600 font-semibold block mb-0.5">自動區間：</span><span id="modalRangePreviewText" class="text-sky-900 font-bold"></span></div>
-    <div class="flex gap-2 justify-end">
-      <button onclick="closeDateModal()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button>
-      <button onclick="saveDateModal()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">確定更新</button>
-    </div>
+    <div class="flex gap-2 justify-end"><button onclick="closeDateModal()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button><button onclick="saveDateModal()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">確定更新</button></div>
   </div>
 </div>
-
+<div id="bkm" onclick="if(event.target===this)this.classList.add('hidden')" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+    <h3 class="text-sm font-bold">備份 / 還原</h3>
+    <p class="text-xs text-slate-500">匯出會產生一段文字並複製，請貼到備忘錄保存。還原時把文字貼在下方再按匯入；也可以貼上舊版 Weekly Fit 或訓練日誌的備份內容。</p>
+    <textarea id="bk" class="w-full h-32 px-3 py-2.5 bg-slate-50 border border-slate-200 text-xs" placeholder="匯出的文字會顯示在這裡；匯入請貼在這裡"></textarea>
+    <p id="bm" class="text-xs text-sky-600"></p>
+    <div class="flex gap-2"><button onclick="expBk()" class="flex-1 py-2.5 rounded-lg bg-sky-500 text-white text-xs font-bold">匯出並複製</button><button onclick="impBk()" class="flex-1 py-2.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">匯入</button><button onclick="$('bkm').classList.add('hidden')" class="flex-1 py-2.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">關閉</button></div>
+  </div>
+</div>
+<div id="cm" class="fixed inset-0 bg-slate-900/50 z-[70] flex items-center justify-center p-4 hidden">
+  <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4">
+    <p id="cmMsg" class="text-sm font-medium"></p>
+    <div class="flex gap-2 justify-end"><button onclick="$('cm').classList.add('hidden')" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button><button onclick="askOk()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">確定</button></div>
+  </div>
+</div>
+<div id="lnkm" onclick="if(event.target===this)closeLink()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+    <h3 class="text-sm font-bold">動作示範連結</h3>
+    <p class="text-xs text-slate-500">貼上 YouTube 或其他教學連結，之後在菜單上點動作文字就能直接開啟。</p>
+    <input id="lnkIn" type="url" inputmode="url" placeholder="https://youtu.be/..." class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-sm font-medium" />
+    <p id="lnkErr" class="text-xs text-rose-500 hidden">連結格式不正確，請貼上完整網址</p>
+    <div class="flex gap-2 justify-end"><button id="lnkClr" onclick="clearLink()" class="mr-auto px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">清除</button><button onclick="closeLink()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button><button onclick="saveLink()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">儲存</button></div>
+  </div>
+</div>
+<div id="libm" onclick="if(event.target===this)closePicker()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+    <div class="flex justify-between items-center"><h3 class="text-sm font-bold">從動作庫加入</h3><button onclick="closePicker()" aria-label="關閉" class="p-1 text-slate-400">✕</button></div>
+    <div id="libList" class="max-h-[55vh] overflow-y-auto space-y-3"></div>
+    <button id="libAdd" onclick="addFromPicker()" class="w-full py-3 rounded-xl bg-sky-500 text-white text-sm font-bold"></button>
+  </div>
+</div>
 <div id="toast" class="fixed left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white text-xs rounded-xl px-4 py-3 shadow-lg items-center gap-3" style="bottom:calc(84px + env(safe-area-inset-bottom))"></div>
 
 <script>
-/* 內嵌圖示（不依賴外部圖示庫） */
-const ICONS = {
-  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
-  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-  pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
-  "trash-2": '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
-  activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
-  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
-  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
-  "calendar-check": '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/>',
-  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+const ICONS={
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+  "trash-2":'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
+  activity:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',timer:'<path d="M10 2h4"/><path d="m12 14 3-3"/><circle cx="12" cy="14" r="8"/>',
+  book:'<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+  list:'<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  cal:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>'
 };
-const lucide = {
-  createIcons() {
-    document.querySelectorAll("[data-lucide]").forEach((el) => {
-      const p = ICONS[el.dataset.lucide]; if (!p) return;
-      const w = document.createElement("span");
-      w.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-      const svg = w.firstChild; svg.setAttribute("class", el.getAttribute("class") || "");
-      el.replaceWith(svg);
-    });
-  },
-};
-const KEY = "WEEKLY_FIT_APP_DATA_V3", OLD_KEY = "WEEKLY_FIT_APP_DATA_V2";
-const ZONES = [
-  ["Zone 1", "#94a3b8", "bg-slate-200 text-slate-700", "熱身恢復 / <60% Max HR"],
-  ["Zone 2", "#10b981", "bg-emerald-100 text-emerald-800", "最佳燃脂 / 60-70% Max HR"],
-  ["Zone 3", "#f59e0b", "bg-amber-100 text-amber-800", "有氧耐力 / 70-80% Max HR"],
-  ["Zone 4", "#f97316", "bg-orange-100 text-orange-800", "無氧閾值 / 80-90% Max HR"],
-  ["Zone 5", "#f43f5e", "bg-rose-100 text-rose-800", "極限爆發 / 90-100% Max HR"],
-];
-const DEFAULT_TYPES = ["慢跑 / 超慢跑","快走 / 坡度走","飛輪 / 自行車","橢圓機 / 踏步機","划船機","游泳","重量訓練","其他運動"];
-const WEEK = ["日","一","二","三","四","五","六"];
-const CIRC = 2 * Math.PI * 32;
+const lucide={createIcons(){document.querySelectorAll("[data-lucide]").forEach(el=>{const p=ICONS[el.dataset.lucide];if(!p)return;const w=document.createElement("span");
+  w.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const s=w.firstChild;s.setAttribute("class",el.getAttribute("class")||"");el.replaceWith(s)})}};
 
-let appState = { v: 3, targetMinutes: 200, startDateStr: "", records: [], history: [], types: [...DEFAULT_TYPES], last: { type: DEFAULT_TYPES[0], zone: "Zone 2" }, lastBackup: null };
-let editingId = null, toastTimer = null;
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const toDateStr=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseDate=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parseDate(s);d.setDate(d.getDate()+n);return toDateStr(d)};
+const today=()=>toDateStr(new Date());
+const fmt=s=>s.replace(/-/g,"/");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mmss=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+let askFn=null;
+function ask(msg,fn){askFn=fn;$("cmMsg").textContent=msg;$("cm").classList.remove("hidden")}
+function askOk(){$("cm").classList.add("hidden");if(askFn)askFn();askFn=null}
 
-/* ---------- 工具函式 ---------- */
-const $ = (id) => document.getElementById(id);
-const pad = (n) => String(n).padStart(2, "0");
-const toDateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const parseDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }; // 本地時間，避免時區偏移
-const addDays = (s, n) => { const d = parseDate(s); d.setDate(d.getDate() + n); return toDateStr(d); };
-const today = () => toDateStr(new Date());
-const fmt = (s) => s.replace(/-/g, "/");
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const endOf = (s) => addDays(s, 6);
-const zoneInfo = (z) => ZONES.find((x) => x[0] === z) || ZONES[0];
-const sum = (recs) => recs.reduce((t, r) => t + Number(r.duration), 0);
-function calcStats(recs) {
-  const zones = Object.fromEntries(ZONES.map((z) => [z[0], 0]));
-  recs.forEach((r) => { if (r.zone in zones) zones[r.zone] += Number(r.duration); });
-  return { total: sum(recs), zones };
+/* ============ 訓練（菜單 / 紀錄 / 一週）============ */
+const TYPES=[["w","🏋️","重訓"],["c","🔥","有氧/減脂"],["b","🏸","羽球"],["r","😴","休息"]];
+const WN=["週一","週二","週三","週四","週五","週六","週日"];
+const CARD="bg-white rounded-3xl p-5 shadow-sm border border-slate-100";
+const INP="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-sm font-medium";
+const NB="w-11 h-11 shrink-0 rounded-xl bg-white border border-slate-100 shadow-sm text-xl text-slate-600";
+const XB="w-11 shrink-0 rounded-xl bg-slate-100 text-slate-400";
+const ADD="w-full py-3 rounded-xl border border-dashed border-sky-400 text-sky-600 text-sm font-bold";
+const CK='<svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+function migPlan(x){x.plan=(Array.isArray(x.plan)?x.plan:[]).map(p=>{p=typeof p==="string"?{t:p,c:false,l:0}:{...p,l:0};if(p.k===undefined){const a=parseAct(p.t);p.k=a.c;if(a.c)p.t=a.t}if(p.u===undefined)p.u="";return p})}
+let W={},wd=today(),wkOff=0,tab="plan",sub="current";
+const CATS=["熱身","肌力","耐力","爆發力","敏捷","有氧"];let planFocus=-1;
+let LIB=[],picked=new Set(),libCatSel=CATS[0];
+function loadLib(){try{LIB=JSON.parse(localStorage.getItem("wk-lib")||"[]");if(!Array.isArray(LIB))LIB=[]}catch(e){LIB=[]}}
+function saveLib(){try{localStorage.setItem("wk-lib",JSON.stringify(LIB))}catch(e){}}
+function parseAct(s){s=(s||"").trim();const m=s.match(/^【([^】]*)】\s*(.*)$/),c=m&&CATS.includes(m[1])?m[1]:"";return{c,t:(c?m[2]:s).trim()}}
+/* 串聯：以「分類 + 動作文字」判斷菜單與動作庫是否為同一個動作 */
+const libOf=p=>{const t=(p.t||"").trim();return t?LIB.find(x=>(x.c||"")===(p.k||"")&&(x.t||"").trim()===t)||null:null};
+const inLib=p=>!!libOf(p);
+/* 串聯：同步動作庫與所有日期菜單中的同名動作連結 */
+function syncUrl(c,t,v){
+  const it=LIB.find(x=>(x.c||"")===c&&(x.t||"").trim()===t);
+  if(it){it.u=v;saveLib()}
+  Object.values(W).forEach(x=>(x.plan||[]).forEach(p=>{if((p.k||"")===c&&(p.t||"").trim()===t)p.u=v}));
+  saveW();
 }
+const pLabel=p=>(p.k?"【"+p.k+"】":"")+p.t;
+const blank=()=>({n:"",sets:[{w:"",r:""}],note:""});
+const empty=l=>!(l.n||l.note||(l.sets||[]).some(s=>s.w||s.r));
+function mig(l){if(!l.sets){const k=Math.min(Math.max(parseInt(l.s)||1,1),20);l.sets=Array.from({length:k},()=>({w:l.w||"",r:l.r||""}));delete l.w;delete l.s;delete l.r}}
+function loadW(){try{W=JSON.parse(localStorage.getItem("wk-data")||"{}")||{}}catch(e){W={}}Object.values(W).forEach(x=>{(x.logs||[]).forEach(mig);migPlan(x)})}
+function saveW(){try{localStorage.setItem("wk-data",JSON.stringify(W))}catch(e){}}
+const day=d=>W[d]||(W[d]={type:"",plan:[],logs:[]});
+const isDone=d=>{const x=W[d];return !!(x&&x.logs&&x.logs.some(l=>!empty(l)))};
+const wl=s=>{const d=parseDate(s);return (d.getMonth()+1)+"/"+d.getDate()+" "+WN[(d.getDay()+6)%7]+(s===today()?"（今天）":"")};
+const navBar=(t,p,c,n)=>`<div class="flex items-center gap-2"><button data-a="${p}" class="${NB}">‹</button><button data-a="${c}" class="flex-1 py-2.5 bg-white rounded-xl border border-slate-100 shadow-sm font-bold">${t}</button><button data-a="${n}" class="${NB}">›</button></div>`;
+/* 訓練菜單專用：輕量日期列（無方框） */
+const navLite=(t,p,c,n)=>`<div class="flex items-center justify-between px-1"><button data-a="${p}" aria-label="前一天" class="w-11 h-11 text-2xl text-slate-400">‹</button><button data-a="${c}" class="px-4 py-2 text-base font-bold">${t}</button><button data-a="${n}" aria-label="後一天" class="w-11 h-11 text-2xl text-slate-400">›</button></div>`;
 
-/* ---------- 儲存 ---------- */
-function save() { try { localStorage.setItem(KEY, JSON.stringify(appState)); } catch (e) { showToast("⚠️ 儲存失敗（可能是無痕模式或空間已滿）"); } }
-function sanitize(d) {
-  const num = (x, def) => (Number.isFinite(Number(x)) && Number(x) > 0 ? Number(x) : def);
-  const recs = (a) => (Array.isArray(a) ? a : []).filter((r) => r && typeof r.date === "string" && Number(r.duration) > 0)
-    .map((r) => ({ id: String(r.id || Date.now() + Math.random()), date: r.date, type: String(r.type || "其他運動"), zone: String(r.zone || "Zone 2"), duration: Number(r.duration), note: String(r.note || "") }));
-  const out = { ...appState };
-  out.targetMinutes = num(d.targetMinutes, 200);
-  out.startDateStr = /^\d{4}-\d{2}-\d{2}$/.test(d.startDateStr) ? d.startDateStr : today();
-  out.records = recs(d.records);
-  out.history = (Array.isArray(d.history) ? d.history : []).filter((h) => h && h.startDateStr).map((h) => {
-    const records = recs(h.records), st = calcStats(records);
-    return { ...h, endDateStr: h.endDateStr || endOf(h.startDateStr), targetMinutes: num(h.targetMinutes, 200), totalMinutes: Number(h.totalMinutes) || 0, records,
-      zones: h.zones || (records.length ? st.zones : { "Zone 2": Number(h.z2Minutes) || 0, "Zone 3": Number(h.z3Minutes) || 0 }), recordsCount: h.recordsCount ?? records.length };
-  });
-  out.types = Array.isArray(d.types) && d.types.length ? d.types.map(String) : [...DEFAULT_TYPES];
-  out.last = d.last && typeof d.last === "object" ? d.last : appState.last;
-  out.lastBackup = d.lastBackup || null;
+const CATCLS={"熱身":"tg-a","肌力":"tg-b","耐力":"tg-c","爆發力":"tg-d","敏捷":"tg-e","有氧":"tg-f"};
+const tagH=(k,x="")=>k?`<span class="tg ${CATCLS[k]||"tg-n"} ${x}">${esc(k)}</span>`:"";
+const LKI='<svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+let planEdit=null,planEditNow=false;
+function vPlan(){
+  const d=day(wd);if(!d.plan.length)d.plan.push({t:"",c:false,l:0,k:"",u:""});
+  const has=d.plan.some(p=>p.t.trim());
+  if(!has)planEdit=true;
+  const ed=planEdit===true;planEditNow=ed;
+  const tops=d.plan.filter(p=>p.l===0&&p.t.trim()),nd=tops.filter(p=>p.c).length,all=tops.length&&nd===tops.length,pct=tops.length?Math.round(nd/tops.length*100):0;
+  const tg=has?`<button data-a="pedit" class="px-3 py-1 rounded-lg text-xs font-bold ${ed?"bg-sky-500 text-white":"bg-slate-100 text-slate-600"}">${ed?"完成":"編輯"}</button>`:"";
+  const head=tops.length?`<div class="pb-3 space-y-1.5"><div class="flex items-center justify-between text-xs font-semibold text-slate-500"><span>已完成 ${nd} / ${tops.length}</span><span class="flex items-center gap-2"><span class="${all?"text-emerald-600":""}">${pct}%</span>${tg}</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-300 ${all?"bg-emerald-500":"bg-sky-500"}" style="width:${pct}%"></div></div></div>`:"";
+  const fk=d.plan[planFocus]?d.plan[planFocus].k:"";
+  const chips=ed?`<div class="flex flex-wrap gap-2 pb-3">${CATS.map(c=>`<button data-a="cat" data-c="${c}" class="tg tgb ${CATCLS[c]} ${fk===c?"on":""}">${c}</button>`).join("")}</div>`:"";
+  const CKB=(p,i,cls)=>`<button data-a="chk" data-i="${i}" aria-label="勾選" class="w-6 h-6 ${cls} shrink-0 rounded-md border-2 flex items-center justify-center ${p.c?"bg-sky-500 border-sky-500 text-white":"border-slate-400"}">${p.c?CK:""}</button>`;
+  const rows=d.plan.map((p,i)=>{
+    if(!ed&&!p.t.trim())return"";
+    const done=!!p.c;
+    if(!ed){
+      const txt=p.u?`<a href="${esc(p.u)}" target="_blank" rel="noopener noreferrer" class="${done?"text-slate-400 line-through":"text-sky-600 underline decoration-sky-300 underline-offset-2"}">${esc(p.t)}</a>`:esc(p.t);
+      return `<div class="pr ${done?"done":""} flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">${CKB(p,i,"mt-0.5")}<div class="min-w-0 flex-1 text-sm font-semibold leading-snug break-words ${done&&!p.u?"line-through text-slate-400":""}">${tagH(p.k,"mr-1.5")}${txt}</div></div>`;
+    }
+    const ta=`<textarea rows="1" data-f="plan" data-i="${i}" placeholder="例如：胸推 12下/組 *3組" class="pi sm w-full min-w-0 px-2 py-2 text-sm font-semibold resize-none overflow-hidden leading-snug ${done?"line-through text-slate-400":""}">${esc(p.t)}</textarea>`;
+    const ctl=`<div class="pctl flex shrink-0 items-center"><button data-a="savelib" data-i="${i}" aria-label="加入動作庫" class="w-8 h-10 text-lg ${inLib(p)?"text-sky-500":"text-slate-400"}">${inLib(p)?"★":"☆"}</button><button data-a="plink" data-i="${i}" aria-label="示範連結" class="w-8 h-10 flex items-center justify-center ${p.u?"text-sky-500":"text-slate-400"}">${LKI}</button><button data-a="delplan" data-i="${i}" aria-label="刪除" class="w-8 h-10 text-slate-400">✕</button></div>`;
+    return `<div class="pr ${done?"done":""} flex items-start gap-1.5" style="margin-top:${i>0?6:0}px">${CKB(p,i,p.k?"mt-8":"mt-2")}<div class="min-w-0 flex-1">${p.k?`<div class="px-2 pt-1">${tagH(p.k)}</div>`:""}${ta}</div>${ctl}</div>`}).join("");
+  const foot=ed?`<div class="flex items-center justify-between pt-2 mt-3 border-t border-slate-100"><button data-a="addplan" class="px-2 py-2 text-sm font-bold text-sky-600">＋ 新增項目</button><button data-a="openpick" class="px-2 py-2 text-sm font-semibold text-slate-500">從動作庫加入</button></div>`:"";
+  return `<div class="space-y-3">`+navLite(wl(wd),"prev","today","next")+`<div class="${CARD} !p-4">${head}${chips}${rows}${foot}</div></div>`;
+}
+/* 動作庫 */
+function vLib(){
+  const opts=CATS.map(c=>`<option value="${c}" ${c===libCatSel?"selected":""}>${c}</option>`).join("")+`<option value="" ${libCatSel===""?"selected":""}>無分類</option>`;
+  const form=`<div class="${CARD} !p-4 space-y-2"><div class="text-xs font-bold text-slate-600">新增動作</div><div class="flex gap-2"><select id="libCat" class="${INP} !w-28 shrink-0">${opts}</select><input id="libTxt" placeholder="例如：原地碎步：30秒/組 *3組" class="${INP} min-w-0 flex-1"></div><button data-a="libadd" class="w-full py-2.5 rounded-xl bg-sky-500 text-white text-sm font-bold">加入動作庫</button></div>`;
+  const imp=`<button data-a="libimp" class="w-full py-3 rounded-xl border border-dashed border-sky-400 text-sky-600 text-sm font-bold">從菜單匯入（${wl(wd)}）</button>`;
+  const lists=[...CATS,""].map(c=>{const it=LIB.filter(x=>(x.c||"")===c);if(!it.length)return"";
+    return `<div class="${CARD} !p-4"><div class="text-xs font-bold text-slate-500 pb-2">${c||"無分類"}（${it.length}）</div>`+it.map(x=>`<div class="flex items-start gap-1.5"><textarea rows="1" data-f="lib" data-id="${esc(x.id)}" class="pi text-sm font-semibold min-w-0 flex-1 px-2 py-2 resize-none overflow-hidden leading-snug">${esc(x.t)}</textarea><button data-a="liblink" data-id="${esc(x.id)}" aria-label="示範連結" class="w-8 h-10 shrink-0 flex items-center justify-center ${x.u?"text-sky-500":"text-slate-400"}">${LKI}</button><button data-a="libdel" data-id="${esc(x.id)}" aria-label="刪除" class="w-9 h-10 shrink-0 text-slate-400">✕</button></div>`).join("")+`</div>`}).join("");
+  const none=`<div class="py-8 text-center text-slate-400 text-xs bg-white rounded-3xl border border-dashed border-slate-200">動作庫還是空的<br>在上方新增，或從菜單匯入</div>`;
+  return `<div class="space-y-3">`+form+imp+(LIB.length?lists:none)+`</div>`;
+}
+let lnkCtx=null;
+function normUrl(v){v=(v||"").trim();if(!v)return"";if(!/^https?:\/\//i.test(v)){if(/^[a-z][a-z0-9+.\-]*:/i.test(v))return null;v="https://"+v}try{const u=new URL(v);return /^https?:$/.test(u.protocol)&&u.hostname.includes(".")?u.href:null}catch(e){return null}}
+function openLink(ctx){lnkCtx=ctx;const cur=ctx.kind==="lib"?(LIB.find(x=>x.id===ctx.id)||{}).u:(day(wd).plan[ctx.i]||{}).u;$("lnkIn").value=cur||"";$("lnkErr").classList.add("hidden");$("lnkClr").classList.toggle("hidden",!cur);$("lnkm").classList.remove("hidden");setTimeout(()=>$("lnkIn").focus(),50)}
+function closeLink(){$("lnkm").classList.add("hidden");lnkCtx=null}
+function setLinkVal(v){
+  const c=lnkCtx;if(!c)return;
+  if(c.kind==="lib"){
+    const it=LIB.find(x=>x.id===c.id);
+    if(it)syncUrl(it.c||"",(it.t||"").trim(),v);
+  }else{
+    const p=day(wd).plan[c.i];
+    if(p){
+      p.u=v;
+      if(libOf(p))syncUrl(p.k||"",(p.t||"").trim(),v);else saveW();
+    }
+  }
+  closeLink();render();
+}
+function saveLink(){const v=normUrl($("lnkIn").value);if(v===null){$("lnkErr").classList.remove("hidden");return}setLinkVal(v)}
+function clearLink(){setLinkVal("")}
+function openPicker(){picked.clear();renderPicker();$("libm").classList.remove("hidden")}
+function closePicker(){$("libm").classList.add("hidden")}
+function updPickBtn(){const b=$("libAdd");b.textContent=picked.size?`加入 ${picked.size} 項`:"請勾選要加入的動作";b.classList.toggle("opacity-50",!picked.size)}
+function renderPicker(){
+  if(!LIB.length){$("libList").innerHTML=`<div class="py-6 text-center text-xs text-slate-400">動作庫還是空的<br>先到「動作庫」分頁新增動作吧</div>`;$("libAdd").classList.add("hidden");return}
+  $("libAdd").classList.remove("hidden");
+  $("libList").innerHTML=[...CATS,""].map(c=>{const it=LIB.filter(x=>(x.c||"")===c);if(!it.length)return"";
+    return `<div><div class="text-[11px] font-bold text-slate-400 pb-1">${c||"無分類"}</div><div class="space-y-1">`+it.map(x=>`<label class="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 text-sm"><input type="checkbox" data-pk="${esc(x.id)}" ${picked.has(x.id)?"checked":""} class="mt-1 w-4 h-4 shrink-0"><span class="font-medium">${esc(x.t)}</span></label>`).join("")+`</div></div>`}).join("");
+  updPickBtn();
+}
+function addFromPicker(){
+  if(!picked.size)return;const d=day(wd);
+  while(d.plan.length&&!d.plan[d.plan.length-1].t.trim())d.plan.pop();
+  [...picked].map(id=>LIB.find(x=>x.id===id)).filter(Boolean).forEach(x=>d.plan.push({t:x.t,k:x.c||"",u:x.u||"",c:false,l:0}));
+  saveW();closePicker();render();
+}
+function vLog(){
+  const d=day(wd);if(!d.logs.length)d.logs.push(blank());
+  const pl=d.plan.filter(x=>x.l===0&&x.t.trim()).map(pLabel);
+  const used=new Set(d.logs.map(l=>l.n));
+  const G="grid grid-cols-[28px_1fr_1fr_32px_32px] gap-2";
+  return `<div class="space-y-4">`
+  
+  
+  +navBar(wl(wd),"prev","today","next")
+  +(pl.length?`<select id="planPick" class="${INP}"><option value="">今日菜單（共 ${pl.length} 項，選擇後帶入）</option>`+pl.map((x,k)=>`<option value="${k}">${used.has(x)?"✓ ":""}${esc(x)}</option>`).join("")+`</select>`:"")
+  +d.logs.map((l,i)=>`<div class="${CARD} !p-4 space-y-2"><div class="flex gap-2"><input data-f="n" data-i="${i}" value="${esc(l.n)}" placeholder="訓練項目（如：胸推）" class="${INP} !font-bold"><button data-a="dellog" data-i="${i}" class="${XB}">✕</button></div>
+  <div class="${G} text-[11px] text-slate-400 text-center"><span>組</span><span>重量 kg</span><span>次數</span><span></span><span></span></div>`
+  +l.sets.map((s,j)=>`<div class="${G} items-center"><b class="text-center text-sm text-slate-500">${j+1}</b><input data-f="w" data-i="${i}" data-j="${j}" value="${esc(s.w)}" inputmode="decimal" class="${INP} text-center"><input data-f="r" data-i="${i}" data-j="${j}" value="${esc(s.r)}" inputmode="numeric" class="${INP} text-center"><button data-a="cpset" data-i="${i}" data-j="${j}" aria-label="複製這一組" class="h-10 text-sky-600 font-bold text-xl">+</button><button data-a="delset" data-i="${i}" data-j="${j}" class="h-10 text-slate-400">✕</button></div>`).join("")
+  +`<button data-a="addset" data-i="${i}" class="w-full py-2.5 rounded-xl bg-slate-100 text-sky-600 text-sm font-semibold">＋ 新增一組</button><input data-f="note" data-i="${i}" value="${esc(l.note)}" placeholder="備註" class="${INP}"></div>`).join("")
+  +`<button data-a="addlog" class="${ADD}">＋ 新增項目</button></div>`;
+}
+function recMap(){const m={};[...appState.records,...appState.history.flatMap(h=>h.records||[])].forEach(r=>(m[r.date]=m[r.date]||[]).push(r));return m}
+function vWeek(){
+  const mon=addDays(today(),-((new Date().getDay()+6)%7)+wkOff*7);
+  let active=0,rows="";const RM=recMap();
+  for(let i=0;i<7;i++){
+    const d=addDays(mon,i),x=W[d]||{},p=parseDate(d),tg={};
+    (RM[d]||[]).forEach(r=>tg[r.type]=(tg[r.type]||0)+Number(r.duration));if((x.logs||[]).some(l=>!empty(l))&&!("重量訓練" in tg))tg["重量訓練"]=0;const ks=Object.keys(tg),dn=ks.length>0,pl=(x.plan||[]).some(q=>q.t&&q.t.trim());if(dn)active++;
+    const st=dn?`<span class="text-xs font-bold text-sky-600">已完成</span>`:(pl?`<span class="text-xs text-slate-400">已安排</span>`:"");
+    const lk=!ks.length||ks.includes("重量訓練");rows+=`<${lk?`button data-a="go" data-d="${d}"`:"div"} class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}</div></div><div class="flex-1 flex flex-wrap gap-1">${ks.length?ks.map(k=>`<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-100 text-sky-700">${esc(k)}${tg[k]?" "+tg[k]+" 分":""}</span>`).join(""):`<span class="text-slate-300">—</span>`}</div>${st}${lk?`<span class="text-slate-300 text-lg">›</span>`:""}</${lk?"button":"div"}>`;
+  }
+  return `<div class="space-y-3">`+navBar(wkOff===0?"本週":wkOff<0?(-wkOff)+" 週前":wkOff+" 週後","wprev","wnow","wnext")+`<div class="text-center text-xs text-slate-500">本週運動 ${active} 天</div>`+rows+`</div>`;
+}
+function grow(){document.querySelectorAll('[data-f="plan"],[data-f="lib"]').forEach(t=>{if(t.scrollHeight){t.style.height="auto";t.style.height=t.scrollHeight+"px"}})}
+function render(){const m={plan:vPlan,lib:vLib,log:vLog,week:vWeek}[tab];if(m){$("v-"+tab).innerHTML=m();if(tab==="plan"||tab==="lib")grow();tick()}}
+
+/* 計時器 */
+let TE=0,ac=null,tpOpen=false;
+function togglePanel(){tpOpen=!tpOpen;$("tpanel").classList.toggle("hidden",!tpOpen);tick()}
+function beepInit(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.resume)ac.resume()}catch(e){}}
+function beep(){try{[0,.25,.5].forEach(o=>{const x=ac.createOscillator(),g=ac.createGain();x.connect(g);g.connect(ac.destination);x.frequency.value=880;g.gain.value=.25;x.start(ac.currentTime+o);x.stop(ac.currentTime+o+.15)})}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+function startT(s){if(!(s>0))return;beepInit();TE=Date.now()+s*1000;tick()}
+function tick(){
+  const el=$("tm"),h=$("hd");let left=0;
+  if(TE){left=Math.ceil((TE-Date.now())/1000);if(left<=0){TE=0;beep();if(el)el.textContent="時間到！";if(!tpOpen)togglePanel()}}
+  if(TE){if(el)el.textContent=mmss(left);h.textContent="休息計時 "+mmss(left);h.classList.add("text-sky-500","font-bold")}
+  else{h.textContent="Weekly Fit · 離線自動儲存";h.classList.remove("text-sky-500","font-bold")}
+  $("tbi").classList.toggle("hidden",!!TE);$("tbt").classList.toggle("hidden",!TE);if(TE)$("tbt").textContent=mmss(left);
+}
+setInterval(tick,250);
+
+document.addEventListener("input",e=>{
+  const t=e.target,f=t.dataset.f;if(!f)return;
+  if(f==="lib"){
+    const it=LIB.find(x=>x.id===t.dataset.id);
+    if(it){
+      const old=(it.t||"").trim(),nv=t.value;
+      if(nv.trim()&&nv.trim()!==old){
+        Object.values(W).forEach(x=>(x.plan||[]).forEach(p=>{if((p.k||"")===(it.c||"")&&(p.t||"").trim()===old)p.t=nv.trim()}));
+        saveW();
+      }
+      it.t=nv.trim()?nv.trim():nv;saveLib();
+    }
+    if(t.scrollHeight){t.style.height="auto";t.style.height=t.scrollHeight+"px"}
+    return;
+  }
+  const d=day(wd),i=+t.dataset.i;
+  if(f==="plan"){d.plan[i].t=t.value;if(t.scrollHeight){t.style.height="auto";t.style.height=t.scrollHeight+"px"}}
+  else if(f==="w"||f==="r"){const s=d.logs[i]&&d.logs[i].sets[+t.dataset.j];if(s)s[f]=t.value}
+  else if(d.logs[i])d.logs[i][f]=t.value;
+  saveW();
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.dataset.f==="plan"){e.preventDefault();const i=+e.target.dataset.i;day(wd).plan.splice(i+1,0,{t:"",c:false,l:0,k:"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]')[i+1];if(n)n.focus()}
+  if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.id==="libTxt"){e.preventDefault();const lb=document.querySelector('[data-a="libadd"]');if(lb)lb.click()}
+  if(e.key==="Escape"){closeSheet();closeGoalModal();closeDateModal();closePicker();closeLink()}
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.pk){if(t.checked)picked.add(t.dataset.pk);else picked.delete(t.dataset.pk);updPickBtn();return}
+  if(t.id==="libCat"){libCatSel=t.value;return}
+  if(t.id!=="planPick"||t.value==="")return;
+  const d=day(wd),pl=d.plan.filter(x=>x.l===0&&x.t.trim()),it=pl[+t.value];if(!it)return;
+  const last=d.logs[d.logs.length-1],nl=blank();nl.n=pLabel(it);
+  if(last&&empty(last))d.logs[d.logs.length-1]=nl;else d.logs.push(nl);
+  saveW();render();
+});
+document.addEventListener("focusin",e=>{if(e.target.dataset&&e.target.dataset.f==="plan")planFocus=+e.target.dataset.i});
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-a]");if(!b)return;
+  const a=b.dataset.a,i=+b.dataset.i,d=day(wd);
+  switch(a){
+    case"prev":wd=addDays(wd,-1);planFocus=-1;planEdit=null;break;case"next":wd=addDays(wd,1);planFocus=-1;planEdit=null;break;case"today":wd=today();planFocus=-1;planEdit=null;break;
+    
+    case"savelib":{
+      const p=d.plan[i],t=(p.t||"").trim(),c=p.k||"";
+      if(!t){showToast("請先輸入動作內容");return}
+      const ex=libOf(p);
+      if(ex){
+        if(p.u&&ex.u!==p.u){syncUrl(c,t,p.u);showToast("已同步示範連結到動作庫");render()}
+        else if(!p.u&&ex.u){p.u=ex.u;saveW();showToast("已從動作庫帶入示範連結");render()}
+        else showToast("動作庫已有這個動作");
+        return;
+      }
+      LIB.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),c,t,u:p.u||""});
+      saveLib();showToast("已加入動作庫");render();
+    }return;
+    case"plink":openLink({kind:"plan",i});return;
+    case"liblink":openLink({kind:"lib",id:b.dataset.id});return;
+    case"pedit":{const was=planEditNow;planEdit=!was;if(was)d.plan=d.plan.filter(p=>p.t.trim());break}
+    case"openpick":openPicker();return;
+    case"libadd":{const t=$("libTxt").value.trim().replace(/^【[^】]*】\s*/,""),c=$("libCat").value;libCatSel=c;if(!t)return;if(LIB.some(x=>x.c===c&&x.t===t)){showToast("動作庫已有相同動作");return}LIB.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),c,t});saveLib();render();const n=$("libTxt");if(n)n.focus()}return;
+    case"libdel":{const k=LIB.findIndex(x=>x.id===b.dataset.id);if(k<0)return;const r=LIB.splice(k,1)[0];saveLib();render();showToast("已刪除動作",()=>{LIB.splice(k,0,r);saveLib();render()})}return;
+    case"libimp":{
+      let n=0,m=0;
+      d.plan.forEach(p=>{
+        const t=(p.t||"").trim(),c=p.k||"";if(!t)return;
+        const ex=libOf(p);
+        if(ex){
+          if(p.u&&ex.u!==p.u){syncUrl(c,t,p.u);m++}
+          else if(!p.u&&ex.u){p.u=ex.u;m++}
+          return;
+        }
+        LIB.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5)+n,c,t,u:p.u||""});n++;
+      });
+      saveLib();saveW();render();
+      showToast(n||m?`已匯入 ${n} 個、同步 ${m} 個連結`:"沒有新的動作可匯入");
+    }return;
+    case"cat":{const c=b.dataset.c;let k=planFocus;if(!(k>=0&&k<d.plan.length)){k=d.plan.length-1;if(k<0||d.plan[k].t.trim()||d.plan[k].k){d.plan.push({t:"",c:false,l:0,k:"",u:""});k=d.plan.length-1}}
+      d.plan[k].k=d.plan[k].k===c?"":c;saveW();render();const n=document.querySelectorAll('[data-f="plan"]')[k];if(n){n.focus();const L=n.value.length;n.setSelectionRange(L,L)}}return;
+    case"addplan":{d.plan.push({t:"",c:false,l:0,k:"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]');n[n.length-1].focus()}return;
+    case"chk":d.plan[i].c=!d.plan[i].c;saveW();break;
+    case"delplan":d.plan.splice(i,1);planFocus=-1;saveW();break;
+    case"addlog":d.logs.push(blank());saveW();break;
+    case"dellog":d.logs.splice(i,1);saveW();break;
+    case"addset":d.logs[i].sets.push({w:"",r:""});saveW();break;
+    case"cpset":{const st=d.logs[i].sets,j=+b.dataset.j;st.splice(j+1,0,{w:st[j].w,r:st[j].r});saveW();break}
+    case"delset":{const st=d.logs[i].sets;st.splice(+b.dataset.j,1);if(!st.length)st.push({w:"",r:""});saveW();break}
+    case"fromplan":{const last=d.logs[d.logs.length-1],nl=blank();nl.n=b.dataset.n;if(last&&empty(last))d.logs[d.logs.length-1]=nl;else d.logs.push(nl);saveW();break}
+    case"t":startT(+b.dataset.s);return;
+    case"tc":startT(+$("cs").value);return;
+    case"ts":TE=0;tick();if($("tm"))$("tm").textContent="0:00";return;
+    case"go":wd=b.dataset.d;planEdit=null;go("log");return;
+    case"wprev":wkOff--;break;case"wnext":wkOff++;break;case"wnow":wkOff=0;break;
+  }
+  render();
+});
+
+/* ============ 有氧（Weekly Fit）============ */
+const KEY="WEEKLY_FIT_APP_DATA_V3",OLD_KEY="WEEKLY_FIT_APP_DATA_V2";
+const ZONES=[
+  ["Zone 1","#94a3b8","bg-slate-200 text-slate-700","熱身恢復 / <60% Max HR"],
+  ["Zone 2","#10b981","bg-emerald-100 text-emerald-800","最佳燃脂 / 60-70% Max HR"],
+  ["Zone 3","#f59e0b","bg-amber-100 text-amber-800","有氧耐力 / 70-80% Max HR"],
+  ["Zone 4","#f97316","bg-orange-100 text-orange-800","無氧閾值 / 80-90% Max HR"],
+  ["Zone 5","#f43f5e","bg-rose-100 text-rose-800","極限爆發 / 90-100% Max HR"]];
+const DEFAULT_TYPES=["慢跑 / 超慢跑","快走 / 坡度走","飛輪 / 自行車","橢圓機 / 踏步機","划船機","游泳","重量訓練","羽球","敏捷訓練","其他運動"];
+const NONZ=["重量訓練","羽球","敏捷訓練"];
+const WEEK=["日","一","二","三","四","五","六"];
+const CIRC=2*Math.PI*32;
+let appState={v:3,targetMinutes:200,startDateStr:"",records:[],history:[],types:[...DEFAULT_TYPES],last:{type:DEFAULT_TYPES[0],zone:"Zone 2"},lastBackup:null};
+let editingId=null,toastTimer=null;
+const endOf=s=>addDays(s,6);
+const NONEZ=["無","#cbd5e1","bg-slate-100 text-slate-500","不計入有氧時數"];
+const isCardio=r=>ZONES.some(z=>z[0]===r.zone);
+const zoneInfo=z=>z==="無"?NONEZ:(ZONES.find(x=>x[0]===z)||ZONES[0]);
+const sum=r=>r.reduce((t,x)=>t+Number(x.duration),0);
+function calcStats(recs){const zones=Object.fromEntries(ZONES.map(z=>[z[0],0]));let total=0;recs.forEach(r=>{if(r.zone in zones){zones[r.zone]+=Number(r.duration);total+=Number(r.duration)}});return{total,zones}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(appState))}catch(e){showToast("儲存失敗（可能是無痕模式或空間已滿）")}}
+function sanitize(d){
+  const num=(x,def)=>(Number.isFinite(Number(x))&&Number(x)>0?Number(x):def);
+  const recs=a=>(Array.isArray(a)?a:[]).filter(r=>r&&typeof r.date==="string"&&(Number(r.duration)>0||r.zone==="無")).map(r=>({id:String(r.id||Date.now()+Math.random()),date:r.date,type:String(r.type||"其他運動"),zone:String(r.zone||"Zone 2"),duration:Number(r.duration)||0,note:String(r.note||"")}));
+  const out={...appState};
+  out.targetMinutes=num(d.targetMinutes,200);
+  out.startDateStr=/^\d{4}-\d{2}-\d{2}$/.test(d.startDateStr)?d.startDateStr:today();
+  out.records=recs(d.records);
+  out.history=(Array.isArray(d.history)?d.history:[]).filter(h=>h&&h.startDateStr).map(h=>{
+    const records=recs(h.records),st=calcStats(records);
+    return{...h,endDateStr:h.endDateStr||endOf(h.startDateStr),targetMinutes:num(h.targetMinutes,200),totalMinutes:Number(h.totalMinutes)||0,records,zones:h.zones||(records.length?st.zones:{"Zone 2":Number(h.z2Minutes)||0,"Zone 3":Number(h.z3Minutes)||0}),recordsCount:h.recordsCount??records.length}});
+  out.types=Array.isArray(d.types)&&d.types.length?d.types.map(String):[...DEFAULT_TYPES];
+  out.last=d.last&&typeof d.last==="object"?d.last:appState.last;
+  out.lastBackup=d.lastBackup||null;
   return out;
 }
-function load() {
-  let raw = null;
-  try { raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch (e) {}
-  if (raw) { try { appState = sanitize(JSON.parse(raw)); } catch (e) {} }
-  if (!appState.startDateStr) appState.startDateStr = today();
+function load(){let raw=null;try{raw=localStorage.getItem(KEY)||localStorage.getItem(OLD_KEY)}catch(e){}
+  if(raw){try{appState=sanitize(JSON.parse(raw))}catch(e){}}
+  if(!appState.startDateStr)appState.startDateStr=today()}
+
+function showToast(msg,undoFn){
+  const t=$("toast");t.innerHTML=`<span>${esc(msg)}</span>`+(undoFn?`<button id="undoBtn" class="font-bold text-sky-300 px-2 py-1">復原</button>`:"");
+  t.classList.remove("hidden");t.classList.add("flex");
+  if(undoFn)$("undoBtn").onclick=()=>{undoFn();hideToast()};
+  clearTimeout(toastTimer);toastTimer=setTimeout(hideToast,5000);
 }
+function hideToast(){$("toast").classList.add("hidden");$("toast").classList.remove("flex")}
 
-/* ---------- Toast ---------- */
-function showToast(msg, undoFn) {
-  const t = $("toast");
-  t.innerHTML = `<span>${esc(msg)}</span>` + (undoFn ? `<button id="undoBtn" class="font-bold text-sky-300 px-2 py-1">復原</button>` : "");
-  t.classList.remove("hidden"); t.classList.add("flex");
-  if (undoFn) $("undoBtn").onclick = () => { undoFn(); hideToast(); };
-  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 5000);
-}
-function hideToast() { $("toast").classList.add("hidden"); $("toast").classList.remove("flex"); }
-
-/* ---------- 渲染 ---------- */
-function renderApp() {
-  const start = appState.startDateStr, end = endOf(start), target = appState.targetMinutes;
-  const { total, zones } = calcStats(appState.records);
-  $("displayWeekRange").textContent = `${fmt(start)} ~ ${fmt(end)}`;
-  $("displayTotalMinutes").textContent = total;
-  $("displayHours").textContent = `(${(total / 60).toFixed(1)} 小時)`;
-  $("displayTargetMinutes").textContent = target;
-  $("displayPercentage").textContent = `${Math.min(Math.round((total / target) * 100), 999)}%`;
-  $("expiredBanner").classList.toggle("hidden", today() <= end);
-
-  const remaining = target - total;
-  $("statusMessage").innerHTML = remaining > 0
-    ? `還差 <span class="text-slate-800 font-bold">${remaining}</span> 分鐘達標`
-    : `<span class="text-emerald-600 font-bold">🎉 太棒了！已達成每週運動目標！</span>`;
-  const c = $("progressCircle");
-  c.style.strokeDasharray = `${CIRC} ${CIRC}`;
-  c.style.strokeDashoffset = CIRC - Math.min(total / target, 1) * CIRC;
-  c.style.stroke = remaining <= 0 ? "#10b981" : "#0ea5e9";
-
-  // 每日色塊
-  const byDay = {}; appState.records.forEach((r) => (byDay[r.date] = (byDay[r.date] || 0) + Number(r.duration)));
-  $("dayStrip").innerHTML = Array.from({ length: 7 }, (_, i) => {
-    const ds = addDays(start, i), m = byDay[ds] || 0, isT = ds === today();
-    const cls = m === 0 ? "bg-slate-100 text-slate-400" : m < 30 ? "bg-sky-100 text-sky-700" : m < 60 ? "bg-sky-300 text-sky-900" : "bg-sky-500 text-white";
-    return `<div class="rounded-lg py-1.5 text-center ${cls} ${isT ? "ring-2 ring-slate-800" : ""}"><div class="text-[10px]">${WEEK[parseDate(ds).getDay()]}</div><div class="text-[11px] font-bold">${m || "-"}</div></div>`;
-  }).join("");
-
-  // Zone 分佈
-  $("zoneBar").innerHTML = ZONES.map((z) => `<div class="h-full transition-all duration-300" style="width:${total ? (zones[z[0]] / total) * 100 : 0}%;background:${z[1]}"></div>`).join("");
-  $("zoneLegend").innerHTML = ZONES.map((z) => `<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${z[1]}"></span>Z${z[0].slice(-1)} ${zones[z[0]]}分</span>`).join("");
-  $("zoneText").textContent = total ? "" : "尚無紀錄";
-
-  renderRecords(); renderHistory();
-  $("historyBadge").textContent = appState.history.length;
-  const lb = appState.lastBackup;
-  $("backupInfo").textContent = lb ? `上次備份：${fmt(lb)}${(parseDate(today()) - parseDate(lb)) / 864e5 > 14 ? "（已超過 14 天，建議備份）" : ""}` : "尚未備份過";
+function renderApp(){
+  const start=appState.startDateStr,end=endOf(start),target=appState.targetMinutes,{total,zones}=calcStats(appState.records);
+  $("displayWeekRange").textContent=`${fmt(start)} ~ ${fmt(end)}`;
+  $("displayTotalMinutes").textContent=total;
+  $("displayHours").textContent=`(${(total/60).toFixed(1)} 小時)`;
+  $("displayTargetMinutes").textContent=target;
+  $("displayPercentage").textContent=`${Math.min(Math.round(total/target*100),999)}%`;
+  $("expiredBanner").classList.toggle("hidden",today()<=end);
+  const remaining=target-total;
+  $("statusMessage").innerHTML=remaining>0?`還差 <span class="text-slate-800 font-bold">${remaining}</span> 分鐘達標`:`<span class="text-emerald-600 font-bold">已達成每週運動目標！</span>`;
+  const c=$("progressCircle");c.style.strokeDasharray=`${CIRC} ${CIRC}`;c.style.strokeDashoffset=CIRC-Math.min(total/target,1)*CIRC;c.style.stroke=remaining<=0?"#10b981":"#0ea5e9";
+  const byDay={};appState.records.filter(isCardio).forEach(r=>byDay[r.date]=(byDay[r.date]||0)+Number(r.duration));
+  $("dayStrip").innerHTML=Array.from({length:7},(_,i)=>{
+    const ds=addDays(start,i),m=byDay[ds]||0;
+    const cls=m===0?"bg-slate-100 text-slate-400":m<30?"bg-sky-100 text-sky-700":m<60?"bg-sky-300 text-sky-900":"bg-sky-500 text-white";
+    return`<div class="rounded-lg py-1.5 text-center ${cls} ${ds===today()?"ring-2 ring-slate-800":""}"><div class="text-[10px]">${WEEK[parseDate(ds).getDay()]}</div><div class="text-[11px] font-bold">${m||"-"}</div></div>`}).join("");
+  $("zoneBar").innerHTML=ZONES.map(z=>`<div class="h-full transition-all duration-300" style="width:${total?zones[z[0]]/total*100:0}%;background:${z[1]}"></div>`).join("");
+  $("zoneLegend").innerHTML=ZONES.map(z=>`<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${z[1]}"></span>Z${z[0].slice(-1)} ${zones[z[0]]}分</span>`).join("");
+  $("zoneText").textContent=total?"":"尚無紀錄";
+  renderRecords();renderHistory();
+  const lb=appState.lastBackup;
+  $("backupInfo").textContent=lb?`上次備份：${fmt(lb)}${(parseDate(today())-parseDate(lb))/864e5>14?"（已超過 14 天，建議備份）":""}`:"尚未備份過";
   lucide.createIcons();
 }
-
-function recordRow(r) {
-  const zi = zoneInfo(r.zone);
-  return `<div class="p-3 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-100">
-    <div class="min-w-0 space-y-1">
-      <div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${zi[2]}">${esc(r.zone)}</span><span class="text-sm font-semibold text-slate-700">${esc(r.type)}</span></div>
-      ${r.note ? `<p class="text-xs text-slate-400 break-words">${esc(r.note)}</p>` : ""}
-    </div>
-    <div class="flex items-center gap-1 shrink-0">
-      <span class="text-base font-black mr-1">${r.duration}<span class="text-[10px] font-normal text-slate-500"> 分</span></span>
-      <button data-act="edit" data-id="${esc(r.id)}" class="text-slate-400 hover:text-sky-500 p-2.5" aria-label="編輯"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-      <button data-act="del" data-id="${esc(r.id)}" class="text-slate-300 hover:text-rose-500 p-2.5" aria-label="刪除"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-    </div></div>`;
+function recordRow(r){
+  const zi=zoneInfo(r.zone);
+  return`<div class="p-3 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-100">
+    <div class="min-w-0 space-y-1"><div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${zi[2]}">${esc(r.zone)}</span><span class="text-sm font-semibold text-slate-700">${esc(r.type)}</span></div>${r.note?`<p class="text-xs text-slate-400 break-words">${esc(r.note)}</p>`:""}</div>
+    <div class="flex items-center gap-1 shrink-0">${r.duration>0?`<span class="text-base font-black mr-1">${r.duration}<span class="text-[10px] font-normal text-slate-500"> 分</span></span>`:""}
+      <button data-act="edit" data-id="${esc(r.id)}" class="text-slate-400 p-2.5" aria-label="編輯"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+      <button data-act="del" data-id="${esc(r.id)}" class="text-slate-300 p-2.5" aria-label="刪除"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
 }
-function renderRecords() {
-  const recs = appState.records;
-  $("recordCountTag").textContent = `${recs.length} 筆`;
-  if (!recs.length) { $("recordsList").innerHTML = `<div class="py-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">本週尚無運動紀錄<br>點擊右下角 + 新增第一筆吧！</div>`; return; }
-  const groups = {}; recs.forEach((r) => (groups[r.date] = groups[r.date] || []).push(r));
-  $("recordsList").innerHTML = Object.keys(groups).sort().reverse().map((d) => {
-    const items = groups[d].slice().reverse();
-    return `<div class="space-y-2"><div class="flex justify-between text-xs font-bold text-slate-600 px-1"><span>${fmt(d)} (${WEEK[parseDate(d).getDay()]})${d === today() ? " · 今天" : ""}</span><span>${sum(items)} 分鐘</span></div>${items.map(recordRow).join("")}</div>`;
-  }).join("");
+function renderRecords(){
+  const recs=appState.records;$("recordCountTag").textContent=`${recs.length} 筆`;
+  if(!recs.length){$("recordsList").innerHTML=`<div class="py-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">本週尚無運動紀錄<br>點擊下方中間的 + 新增第一筆吧！</div>`;return}
+  const g={};recs.forEach(r=>(g[r.date]=g[r.date]||[]).push(r));
+  $("recordsList").innerHTML=Object.keys(g).sort().reverse().map(d=>{const items=g[d].slice().reverse();
+    return`<div class="space-y-2"><div class="flex justify-between text-xs font-bold text-slate-600 px-1"><span>${fmt(d)} (${WEEK[parseDate(d).getDay()]})${d===today()?" · 今天":""}</span><span>${sum(items.filter(isCardio))?"有氧 "+sum(items.filter(isCardio))+" 分鐘":""}</span></div>${items.map(recordRow).join("")}</div>`}).join("");
 }
-
-function renderHistory() {
-  const h = appState.history;
-  let streak = 0; for (const w of h) { if (w.totalMinutes >= w.targetMinutes) streak++; else break; }
-  $("streakText").textContent = h.length ? `🔥 連續達標 ${streak} 週 · 共 ${h.length} 週紀錄` : "點擊「結算本週」後，週紀錄會保存在這裡。";
-  const recent = h.slice(0, 8).reverse(), max = Math.max(1, ...recent.map((w) => Math.max(w.totalMinutes, w.targetMinutes)));
-  $("historyChart").innerHTML = recent.map((w) => `<div class="flex-1 flex flex-col justify-end h-full" title="${fmt(w.startDateStr)}"><div class="rounded-t ${w.totalMinutes >= w.targetMinutes ? "bg-emerald-500" : "bg-slate-300"}" style="height:${(w.totalMinutes / max) * 100}%"></div></div>`).join("");
-  if (!h.length) { $("historyList").innerHTML = `<div class="py-10 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">尚無歷史歸檔紀錄</div>`; return; }
-  $("historyList").innerHTML = h.map((w) => {
-    const zs = ZONES.filter((z) => w.zones && w.zones[z[0]]).map((z) => `<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${z[1]}"></span>Z${z[0].slice(-1)} ${w.zones[z[0]]}</span>`).join("");
-    const detail = w.records.length ? `<div class="space-y-1 pt-2">${w.records.slice().sort((a, b) => a.date.localeCompare(b.date)).map((r) => `<div class="flex justify-between text-[11px] text-slate-600"><span>${fmt(r.date).slice(5)} ${esc(r.type)} · ${esc(r.zone)}</span><span class="font-bold">${r.duration} 分</span></div>`).join("")}</div>` : `<p class="text-[11px] text-slate-400 pt-2">此週僅保留統計（舊版歸檔）</p>`;
-    return `<details class="p-4 bg-slate-50 rounded-2xl border border-slate-200/70"><summary class="cursor-pointer space-y-2">
-      <div class="flex justify-between items-center"><span class="text-xs font-bold">${fmt(w.startDateStr)} ~ ${fmt(w.endDateStr)}</span>
-      <span class="text-xs font-black ${w.totalMinutes >= w.targetMinutes ? "text-emerald-600" : "text-slate-500"}">${w.totalMinutes} / ${w.targetMinutes} 分鐘</span></div>
-      <div class="flex flex-wrap gap-x-3 text-[11px] text-slate-500">${zs || "無區間資料"}<span>共 ${w.recordsCount} 筆</span></div></summary>
-      ${detail}<div class="text-right pt-2"><button data-act="delhist" data-id="${esc(w.id)}" class="text-[11px] text-rose-500 p-2">刪除此週</button></div></details>`;
-  }).join("");
+function renderHistory(){
+  const h=appState.history;let streak=0;for(const w of h){if(w.totalMinutes>=w.targetMinutes)streak++;else break}
+  $("streakText").textContent=h.length?`連續達標 ${streak} 週 · 共 ${h.length} 週紀錄`:"點擊「結算本週」後，週紀錄會保存在這裡。";
+  const recent=h.slice(0,8).reverse(),max=Math.max(1,...recent.map(w=>Math.max(w.totalMinutes,w.targetMinutes)));
+  $("historyChart").innerHTML=recent.map(w=>`<div class="flex-1 flex flex-col justify-end h-full"><div class="rounded-t ${w.totalMinutes>=w.targetMinutes?"bg-emerald-500":"bg-slate-300"}" style="height:${w.totalMinutes/max*100}%"></div></div>`).join("");
+  if(!h.length){$("historyList").innerHTML=`<div class="py-10 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">尚無歷史歸檔紀錄</div>`;return}
+  $("historyList").innerHTML=h.map(w=>{
+    const zs=ZONES.filter(z=>w.zones&&w.zones[z[0]]).map(z=>`<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${z[1]}"></span>Z${z[0].slice(-1)} ${w.zones[z[0]]}</span>`).join("");
+    const detail=w.records.length?`<div class="space-y-1 pt-2">${w.records.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>`<div class="flex justify-between text-[11px] text-slate-600"><span>${fmt(r.date).slice(5)} ${esc(r.type)} · ${esc(r.zone)}</span><span class="font-bold">${r.duration>0?r.duration+" 分":""}</span></div>`).join("")}</div>`:`<p class="text-[11px] text-slate-400 pt-2">此週僅保留統計（舊版歸檔）</p>`;
+    return`<details class="p-4 bg-slate-50 rounded-2xl border border-slate-200/70"><summary class="cursor-pointer space-y-2"><div class="flex justify-between items-center"><span class="text-xs font-bold">${fmt(w.startDateStr)} ~ ${fmt(w.endDateStr)}</span><span class="text-xs font-black ${w.totalMinutes>=w.targetMinutes?"text-emerald-600":"text-slate-500"}">${w.totalMinutes} / ${w.targetMinutes} 分鐘</span></div>
+      <div class="flex flex-wrap gap-x-3 text-[11px] text-slate-500">${zs||"無區間資料"}<span>共 ${w.recordsCount} 筆</span></div></summary>${detail}<div class="text-right pt-2"><button data-act="delhist" data-id="${esc(w.id)}" class="text-[11px] text-rose-500 p-2">刪除此週</button></div></details>`}).join("");
 }
-
-/* ---------- 事件委派（編輯 / 刪除）---------- */
-document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-act]"); if (!b) return;
-  const id = b.dataset.id;
-  if (b.dataset.act === "edit") openSheet(id);
-  if (b.dataset.act === "del") deleteRecord(id);
-  if (b.dataset.act === "delhist" && confirm("確定刪除這一週的歷史紀錄？")) { appState.history = appState.history.filter((w) => w.id !== id); save(); renderApp(); }
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;const id=b.dataset.id;
+  if(b.dataset.act==="edit")openSheet(id);
+  if(b.dataset.act==="del")deleteRecord(id);
+  if(b.dataset.act==="delhist")ask("確定刪除這一週的歷史紀錄？",()=>{appState.history=appState.history.filter(w=>w.id!==id);save();renderApp()});
 });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeSheet(); closeGoalModal(); closeDateModal(); } });
 
-/* ---------- 新增 / 編輯 Sheet ---------- */
-function fillSelects(rec) {
-  const days = Array.from({ length: 7 }, (_, i) => addDays(appState.startDateStr, i));
-  const sel = rec ? rec.date : days.includes(today()) ? today() : days[0];
-  if (!days.includes(sel)) days.push(sel);
-  $("inDate").innerHTML = days.map((d) => `<option value="${d}" ${d === sel ? "selected" : ""}>${fmt(d)} (${WEEK[parseDate(d).getDay()]})</option>`).join("");
-  const type = rec ? rec.type : appState.last.type;
-  const types = appState.types.includes(type) ? appState.types : [...appState.types, type];
-  $("inType").innerHTML = types.map((t) => `<option value="${esc(t)}" ${t === type ? "selected" : ""}>${esc(t)}</option>`).join("") + `<option value="__new__">＋ 新增種類…</option>`;
-  const zone = rec ? rec.zone : appState.last.zone;
-  $("inZone").innerHTML = ZONES.map((z) => `<option value="${z[0]}" ${z[0] === zone ? "selected" : ""}>${z[0]} (${z[3]})</option>`).join("");
+function fillSelects(rec){
+  const days=Array.from({length:7},(_,i)=>addDays(appState.startDateStr,i));
+  const pref=(tab==="plan"||tab==="log")&&days.includes(wd)?wd:today(),sel=rec?rec.date:days.includes(pref)?pref:days[0];if(!days.includes(sel))days.push(sel);
+  $("inDate").innerHTML=days.map(d=>`<option value="${d}" ${d===sel?"selected":""}>${fmt(d)} (${WEEK[parseDate(d).getDay()]})</option>`).join("");
+  const type=rec?rec.type:appState.last.type,base=[...new Set([...DEFAULT_TYPES,...appState.types])],types=base.includes(type)?base:[...base,type];
+  $("inType").innerHTML=types.map(t=>`<option value="${esc(t)}" ${t===type?"selected":""}>${esc(t)}</option>`).join("");
+  const zone=rec?rec.zone:appState.last.zone;
+  $("inZone").innerHTML=ZONES.map(z=>`<option value="${z[0]}" ${z[0]===zone?"selected":""}>${z[0]} (${z[3]})</option>`).join("")+`<option value="無" ${zone==="無"?"selected":""}>無（不計入有氧時數）</option>`;
 }
-function onTypeChange() {
-  const sel = $("inType");
-  if (sel.value !== "__new__") return;
-  const name = (prompt("輸入新的運動種類名稱：") || "").trim().slice(0, 20);
-  if (name) { if (!appState.types.includes(name)) appState.types.push(name); fillSelects({ date: $("inDate").value, type: name, zone: $("inZone").value }); }
-  else sel.selectedIndex = 0;
+function openSheet(id){
+  const rec=id?appState.records.find(r=>r.id===id):null;editingId=rec?rec.id:null;
+  
+  fillSelects(rec);syncDur();
+  $("inDur").value=rec?rec.duration:"";$("inNote").value=rec?rec.note:"";
+  $("sheetTitle").textContent=rec?"編輯運動紀錄":"新增運動紀錄";$("sheetSubmit").textContent=rec?"儲存修改":"加入運動紀錄";
+  $("quickBtns").innerHTML=[5,10,15,30,60].map(n=>`<button type="button" onclick="addMinutesQuick(${n})" class="px-2.5 py-1.5 text-xs bg-slate-100 text-slate-700 font-semibold rounded-md border border-slate-200">+${n}</button>`).join("")+`<button type="button" onclick="$('inDur').value=''" class="px-2.5 py-1.5 text-xs text-slate-400">清除</button>`;
+  $("sheetBg").classList.remove("hidden");$("sheet").classList.remove("closed");
+  setTimeout(()=>$("inDur").focus(),260);
 }
-function openSheet(id) {
-  const rec = id ? appState.records.find((r) => r.id === id) : null;
-  editingId = rec ? rec.id : null;
-  if (!$("viewCurrent").offsetParent) switchTab("current");
-  fillSelects(rec);
-  $("inDur").value = rec ? rec.duration : ""; $("inNote").value = rec ? rec.note : "";
-  $("sheetTitle").textContent = rec ? "編輯運動紀錄" : "新增運動紀錄";
-  $("sheetSubmit").textContent = rec ? "儲存修改" : "加入運動紀錄";
-  $("quickBtns").innerHTML = [5, 10, 15, 30, 60].map((n) => `<button type="button" onclick="addMinutesQuick(${n})" class="px-2.5 py-1.5 text-xs bg-slate-100 active:bg-slate-300 text-slate-700 font-semibold rounded-md border border-slate-200">+${n}</button>`).join("") + `<button type="button" onclick="$('inDur').value=''" class="px-2.5 py-1.5 text-xs text-slate-400">清除</button>`;
-  $("sheetBg").classList.remove("hidden"); $("sheet").classList.remove("closed");
-  setTimeout(() => $("inDur").focus(), 260);
+function syncDur(){const none=$("inZone").value==="無";$("inDur").required=!none;$("inDur").placeholder=none?"選填":"例如：40"}
+function onTypeChange(){if(NONZ.includes($("inType").value))$("inZone").value="無";syncDur()}
+function refresh(){renderApp();if(tab!=="cardio")render()}
+function closeSheet(){$("sheet").classList.add("closed");$("sheetBg").classList.add("hidden");editingId=null}
+function addMinutesQuick(n){$("inDur").value=(parseInt($("inDur").value,10)||0)+n}
+function handleSaveRecord(e){
+  e.preventDefault();const duration=parseInt($("inDur").value,10)||0;if($("inZone").value!=="無"&&duration<=0)return;
+  const data={date:$("inDate").value,type:$("inType").value,zone:$("inZone").value,duration,note:$("inNote").value.trim()};
+  if(editingId){Object.assign(appState.records.find(x=>x.id===editingId),data);showToast("已更新紀錄")}
+  else{appState.records.push({id:Date.now().toString(),...data});showToast("已新增紀錄")}
+  appState.last={type:data.type,zone:data.zone};save();refresh();closeSheet();
 }
-function closeSheet() { $("sheet").classList.add("closed"); $("sheetBg").classList.add("hidden"); editingId = null; }
-function addMinutesQuick(n) { $("inDur").value = (parseInt($("inDur").value, 10) || 0) + n; }
-function handleSaveRecord(e) {
-  e.preventDefault();
-  const duration = parseInt($("inDur").value, 10);
-  if (!duration || duration <= 0) return;
-  const data = { date: $("inDate").value, type: $("inType").value, zone: $("inZone").value, duration, note: $("inNote").value.trim() };
-  if (data.type === "__new__") return;
-  if (editingId) { const r = appState.records.find((x) => x.id === editingId); Object.assign(r, data); showToast("已更新紀錄"); }
-  else { appState.records.push({ id: Date.now().toString(), ...data }); showToast("已新增紀錄"); }
-  appState.last = { type: data.type, zone: data.zone };
-  save(); renderApp(); closeSheet();
+function deleteRecord(id){
+  const idx=appState.records.findIndex(r=>r.id===id);if(idx<0)return;
+  const[removed]=appState.records.splice(idx,1);save();renderApp();
+  showToast("已刪除紀錄",()=>{appState.records.splice(idx,0,removed);save();renderApp()});
 }
-function deleteRecord(id) {
-  const idx = appState.records.findIndex((r) => r.id === id); if (idx < 0) return;
-  const [removed] = appState.records.splice(idx, 1);
-  save(); renderApp();
-  showToast("已刪除紀錄", () => { appState.records.splice(idx, 0, removed); save(); renderApp(); });
-}
-
-/* ---------- 存檔 / 切換 ---------- */
-function archiveCurrentWeek() {
-  if (!confirm("確定要存檔並開始新的一週嗎？")) return;
-  const { total, zones } = calcStats(appState.records), end = endOf(appState.startDateStr);
-  appState.history.unshift({ id: Date.now().toString(), startDateStr: appState.startDateStr, endDateStr: end, targetMinutes: appState.targetMinutes,
-    totalMinutes: total, zones, records: appState.records, recordsCount: appState.records.length, archivedAt: new Date().toISOString() });
-  appState.startDateStr = addDays(end, 1);
-  appState.records = [];
-  save(); renderApp();
-}
-function switchTab(tab) {
-  $("viewCurrent").classList.toggle("hidden", tab !== "current");
-  $("viewHistory").classList.toggle("hidden", tab !== "history");
-  [["current", "navCurrent"], ["history", "navHistory"]].forEach(([t, id]) => {
-    $(id).className = "flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold " + (t === tab ? "text-sky-500" : "text-slate-400");
+function archiveCurrentWeek(){
+  ask("確定要存檔並開始新的一週嗎？",()=>{
+    const{total,zones}=calcStats(appState.records),end=endOf(appState.startDateStr);
+    appState.history.unshift({id:Date.now().toString(),startDateStr:appState.startDateStr,endDateStr:end,targetMinutes:appState.targetMinutes,totalMinutes:total,zones,records:appState.records,recordsCount:appState.records.length,archivedAt:new Date().toISOString()});
+    appState.startDateStr=addDays(end,1);appState.records=[];save();renderApp();
   });
-  window.scrollTo({ top: 0 });
 }
-function updateThemeBtn() {
-  $("themeBtn").innerHTML = `<i data-lucide="${document.documentElement.classList.contains("dark") ? "sun" : "moon"}" class="w-5 h-5"></i>`;
-}
-function toggleTheme() {
-  const d = document.documentElement.classList.toggle("dark");
-  try { localStorage.setItem("WF_THEME", d ? "dark" : "light"); } catch (e) {}
-  updateThemeBtn(); lucide.createIcons();
-}
+function openGoalModal(){$("modalGoalInput").value=appState.targetMinutes;$("goalModal").classList.remove("hidden")}
+function closeGoalModal(){$("goalModal").classList.add("hidden")}
+function saveGoalModal(){const v=parseInt($("modalGoalInput").value,10);if(v>0){appState.targetMinutes=v;save();renderApp();closeGoalModal()}}
+function openDateModal(){$("modalStartDateInput").value=appState.startDateStr;updateModalRangePreview();$("dateModal").classList.remove("hidden")}
+function closeDateModal(){$("dateModal").classList.add("hidden")}
+function updateModalRangePreview(){const s=$("modalStartDateInput").value;if(s)$("modalRangePreviewText").textContent=`${fmt(s)} ~ ${fmt(endOf(s))}`}
+function saveDateModal(){const s=$("modalStartDateInput").value;if(s){appState.startDateStr=s;save();renderApp();closeDateModal()}}
 
-/* ---------- Modals ---------- */
-function openGoalModal() { $("modalGoalInput").value = appState.targetMinutes; $("goalModal").classList.remove("hidden"); }
-function closeGoalModal() { $("goalModal").classList.add("hidden"); }
-function saveGoalModal() { const v = parseInt($("modalGoalInput").value, 10); if (v > 0) { appState.targetMinutes = v; save(); renderApp(); closeGoalModal(); } }
-function openDateModal() { $("modalStartDateInput").value = appState.startDateStr; updateModalRangePreview(); $("dateModal").classList.remove("hidden"); }
-function closeDateModal() { $("dateModal").classList.add("hidden"); }
-function updateModalRangePreview() { const s = $("modalStartDateInput").value; if (s) $("modalRangePreviewText").textContent = `${fmt(s)} ~ ${fmt(endOf(s))}`; }
-function saveDateModal() { const s = $("modalStartDateInput").value; if (s) { appState.startDateStr = s; save(); renderApp(); closeDateModal(); } }
-
-/* ---------- 匯出 / 匯入 ---------- */
-function exportDataJSON() {
-  appState.lastBackup = today(); save();
-  const url = URL.createObjectURL(new Blob([JSON.stringify(appState, null, 2)], { type: "application/json" }));
-  const a = document.createElement("a"); a.href = url; a.download = `WeeklyFit_Backup_${today()}.json`;
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-  renderApp();
+/* ============ 分頁 / 主題 / 備份 ============ */
+const TABS=[["plan","訓練菜單","list"],["log","訓練紀錄","chart"],["week","一週紀錄","cal"],["cardio","有氧時數","activity"],["lib","動作庫","book"]];
+function updFab(){}
+function setSub(s){
+  sub=s;$("viewCurrent").classList.toggle("hidden",s!=="current");$("viewHistory").classList.toggle("hidden",s!=="history");
+  document.querySelectorAll("#seg button").forEach(b=>b.className=b.dataset.s===s?"py-2 rounded-lg bg-white shadow-sm text-slate-800":"py-2 text-slate-500");
+  updFab();
 }
-function importDataJSON(event) {
-  const input = event.target, file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data || typeof data !== "object" || !Array.isArray(data.records)) throw new Error("bad");
-      if (!confirm(`將以備份覆蓋目前資料（${data.records.length} 筆本週紀錄、${(data.history || []).length} 週歷史）。確定嗎？`)) return;
-      appState = sanitize(data); save(); renderApp(); alert("備份資料已順利匯入並還原！");
-    } catch (err) { alert("匯入失敗：檔案格式不正確"); }
-    finally { input.value = ""; }
-  };
-  reader.readAsText(file);
+function go(t){
+  tab=t;TABS.forEach(x=>$("v-"+x[0]).classList.toggle("hidden",x[0]!==t));
+  const nb=x=>`<button onclick="go('${x[0]}')" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold ${x[0]===t?"text-sky-500":"text-slate-400"}"><i data-lucide="${x[2]}" class="w-6 h-6"></i>${x[1]}</button>`;
+  $("nav").innerHTML=nb(TABS[0])+nb(TABS[1])+`<button onclick="openSheet()" aria-label="新增運動紀錄" class="mx-auto -mt-6 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center border-4 border-white"><i data-lucide="plus" class="w-7 h-7"></i></button>`+nb(TABS[2])+nb(TABS[3]);
+  $("hico").innerHTML=`<i data-lucide="${TABS.find(x=>x[0]===t)[2]}" class="w-6 h-6"></i>`;
+  $("ttl").textContent=TABS.find(x=>x[0]===t)[1];
+  if(t==="cardio"){setSub(sub);renderApp()}else render();
+  const lv=t==="plan"||t==="lib",la=t==="lib",lb=$("lbtn");lb.classList.toggle("hidden",!lv);lb.classList.toggle("flex",lv);["!bg-sky-500","!text-white","!border-sky-500"].forEach(c=>lb.classList.toggle(c,la));const on=t==="log";$("tbtn").classList.toggle("hidden",!on);$("tbtn").classList.toggle("flex",on);lucide.createIcons();window.scrollTo({top:0});
 }
-
-/* ---------- 圖示 / 初始化 ---------- */
-function generateAppIcons() {
-  const cv = document.createElement("canvas"); cv.width = cv.height = 180;
-  const ctx = cv.getContext("2d");
-  ctx.fillStyle = "#0f172a"; ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(0, 0, 180, 180, 40) : ctx.rect(0, 0, 180, 180)); ctx.fill();
-  ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 12; ctx.lineCap = ctx.lineJoin = "round"; ctx.beginPath();
-  [[25,90],[55,90],[75,45],[95,135],[115,70],[130,90],[155,90]].forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-  ctx.stroke();
-  const u = cv.toDataURL("image/png"); $("apple-touch-icon").href = u; $("app-favicon").href = u;
+function updateThemeBtn(){$("themeBtn").innerHTML=`<i data-lucide="${document.documentElement.classList.contains("dark")?"sun":"moon"}" class="w-5 h-5"></i>`}
+function toggleTheme(){const d=document.documentElement.classList.toggle("dark");try{localStorage.setItem("WF_THEME",d?"dark":"light")}catch(e){}updateThemeBtn();lucide.createIcons()}
+function openBk(){$("bk").value="";$("bm").textContent="";$("bkm").classList.remove("hidden")}
+function expBk(){
+  appState.lastBackup=today();save();const t=$("bk");t.value=JSON.stringify({wk:W,wf:appState,lib:LIB});t.focus();t.select();
+  try{document.execCommand("copy")}catch(e){}try{navigator.clipboard&&navigator.clipboard.writeText(t.value)}catch(e){}
+  $("bm").textContent="已匯出。若沒有自動複製，請長按文字框選「全選」再複製，貼到備忘錄保存。";
+  if(tab==="cardio")renderApp();
 }
-window.addEventListener("DOMContentLoaded", () => { generateAppIcons(); load(); switchTab("current"); updateThemeBtn(); renderApp(); });
+function impBk(){
+  let o;try{o=JSON.parse($("bk").value)}catch(e){$("bm").textContent="格式不正確，請貼上完整的匯出文字";return}
+  if(!o||typeof o!=="object"||Array.isArray(o)){$("bm").textContent="格式不正確，請貼上完整的匯出文字";return}
+  let wk=null,wf=null;if(o.wk||o.wf){wk=o.wk;wf=o.wf}else if(Array.isArray(o.records))wf=o;else wk=o;
+  ask("匯入會覆蓋相同日期的訓練資料，以及目前的有氧資料。確定嗎？",()=>{
+    if(wk&&typeof wk==="object"){Object.assign(W,wk);Object.values(W).forEach(x=>{(x.logs||[]).forEach(mig);migPlan(x)});saveW()}
+    if(wf&&Array.isArray(wf.records)){appState=sanitize(wf);save()}
+    if(Array.isArray(o.lib)){o.lib.forEach(x=>{if(x&&typeof x.t==="string"&&!LIB.some(y=>y.id===x.id||(y.c===(x.c||"")&&y.t===x.t)))LIB.push({id:String(x.id||Date.now()+Math.random()),c:String(x.c||""),t:x.t,u:String(x.u||"")})});saveLib()}
+    go(tab);$("bm").textContent="匯入完成";
+  });
+}
+function generateAppIcons(){
+  const cv=document.createElement("canvas");cv.width=cv.height=180;const ctx=cv.getContext("2d");
+  ctx.fillStyle="#0f172a";ctx.beginPath();ctx.roundRect?ctx.roundRect(0,0,180,180,40):ctx.rect(0,0,180,180);ctx.fill();
+  ctx.strokeStyle="#38bdf8";ctx.lineWidth=12;ctx.lineCap=ctx.lineJoin="round";ctx.beginPath();
+  [[25,90],[55,90],[75,45],[95,135],[115,70],[130,90],[155,90]].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
+  const u=cv.toDataURL("image/png");$("apple-touch-icon").href=u;$("app-favicon").href=u;
+}
+window.addEventListener("DOMContentLoaded",()=>{generateAppIcons();loadW();loadLib();load();updateThemeBtn();go("plan")});
 </script>
 </body>
 </html>
