@@ -219,6 +219,17 @@
     <button id="libAdd" onclick="addFromPicker()" class="w-full py-3 rounded-xl bg-sky-500 text-white text-sm font-bold"></button>
   </div>
 </div>
+<div id="dtm" onclick="if(event.target===this)closeDayType()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4">
+    <div><h3 id="dtTitle" class="text-sm font-bold"></h3><p class="text-xs text-slate-500 mt-1">可複選；選「休息」會取消其他項目</p></div>
+    <div id="dtOpts" class="grid grid-cols-2 gap-2"></div>
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="dtGo('plan')" class="py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">訓練菜單</button>
+      <button onclick="dtGo('log')" class="py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">訓練紀錄</button>
+    </div>
+    <button onclick="closeDayType()" class="w-full py-3 rounded-xl bg-sky-500 text-white text-sm font-bold">完成</button>
+  </div>
+</div>
 <div id="toast" class="fixed left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white text-xs rounded-xl px-4 py-3 shadow-lg items-center gap-3" style="bottom:calc(84px + env(safe-area-inset-bottom))"></div>
 
 <script>
@@ -252,7 +263,7 @@ function ask(msg,fn){askFn=fn;$("cmMsg").textContent=msg;$("cm").classList.remov
 function askOk(){$("cm").classList.add("hidden");if(askFn)askFn();askFn=null}
 
 /* ============ 訓練（菜單 / 紀錄 / 一週）============ */
-const TYPES=[["w","🏋️","重訓"],["c","🔥","有氧/減脂"],["b","🏸","羽球"],["r","😴","休息"]];
+const TYPES=[["w","🏋️","重訓"],["c","🔥","有氧"],["b","🏸","羽球"],["r","😴","休息"]];
 const WN=["週一","週二","週三","週四","週五","週六","週日"];
 const CARD="bg-white rounded-3xl p-5 shadow-sm border border-slate-100";
 const INP="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-sm font-medium";
@@ -381,17 +392,41 @@ function vLog(){
   +`<button data-a="addlog" class="${ADD}">＋ 新增項目</button></div>`;
 }
 function recMap(){const m={};[...appState.records,...appState.history.flatMap(h=>h.records||[])].forEach(r=>(m[r.date]=m[r.date]||[]).push(r));return m}
+function dayTags(d){const x=W[d];return x&&Array.isArray(x.tags)?x.tags:[]}
 function vWeek(){
   const mon=addDays(today(),-((new Date().getDay()+6)%7)+wkOff*7);
   let active=0,rows="";const RM=recMap();
+  const chip=(t,c)=>`<span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${c}">${t}</span>`;
   for(let i=0;i<7;i++){
     const d=addDays(mon,i),x=W[d]||{},p=parseDate(d),tg={};
-    (RM[d]||[]).forEach(r=>tg[r.type]=(tg[r.type]||0)+Number(r.duration));if((x.logs||[]).some(l=>!empty(l))&&!("重量訓練" in tg))tg["重量訓練"]=0;const ks=Object.keys(tg),dn=ks.length>0,pl=(x.plan||[]).some(q=>q.t&&q.t.trim());if(dn)active++;
-    const st=dn?`<span class="text-xs font-bold text-sky-600">已完成</span>`:(pl?`<span class="text-xs text-slate-400">已安排</span>`:"");
-    const lk=!ks.length||ks.includes("重量訓練");rows+=`<${lk?`button data-a="go" data-d="${d}"`:"div"} class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}</div></div><div class="flex-1 flex flex-wrap gap-1">${ks.length?ks.map(k=>`<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-100 text-sky-700">${esc(k)}${tg[k]?" "+tg[k]+" 分":""}</span>`).join(""):`<span class="text-slate-300">—</span>`}</div>${st}${lk?`<span class="text-slate-300 text-lg">›</span>`:""}</${lk?"button":"div"}>`;
+    (RM[d]||[]).forEach(r=>tg[r.type]=(tg[r.type]||0)+Number(r.duration));
+    if((x.logs||[]).some(l=>!empty(l))&&!("重量訓練" in tg))tg["重量訓練"]=0;
+    const ks=Object.keys(tg),dn=ks.length>0,tags=dayTags(d);
+    if(dn)active++;
+    const hasPlan=(x.plan||[]).some(q=>q.t&&q.t.trim())||tags.some(k=>k!=="r");
+    const dW=ks.includes("重量訓練"),dB=ks.includes("羽球"),dC=ks.some(k=>!NONZ.includes(k));
+    const pend=tags.filter(k=>!((k==="w"&&dW)||(k==="b"&&dB)||(k==="c"&&dC)));
+    const doneChips=ks.map(k=>chip(esc(k)+(tg[k]?" "+tg[k]+" 分":""),"bg-sky-100 text-sky-700")).join("");
+    const planChips=pend.map(k=>{const t=TYPES.find(y=>y[0]===k);return t?chip(t[1]+" "+t[2],k==="r"?"bg-slate-100 text-slate-600":"border border-sky-300 text-sky-600"):""}).join("");
+    const st=dn?`<span class="text-xs font-bold text-sky-600">已完成</span>`:(hasPlan?`<span class="text-xs text-slate-400">已安排</span>`:"");
+    rows+=`<button data-a="daytype" data-d="${d}" class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}</div></div><div class="flex-1 flex flex-wrap gap-1">${doneChips+planChips||`<span class="text-slate-300">—</span>`}</div>${st}<span class="text-slate-300 text-lg">›</span></button>`;
   }
   return `<div class="space-y-3">`+navBar(wkOff===0?"本週":wkOff<0?(-wkOff)+" 週前":wkOff+" 週後","wprev","wnow","wnext")+`<div class="text-center text-xs text-slate-500">本週運動 ${active} 天</div>`+rows+`</div>`;
 }
+/* 一週紀錄：設定當天類型 */
+let dtDate=null;
+function openDayType(d){dtDate=d;$("dtTitle").textContent=wl(d)+" 的訓練類型";renderDayType();$("dtm").classList.remove("hidden")}
+function closeDayType(){$("dtm").classList.add("hidden");dtDate=null}
+function renderDayType(){
+  const cur=dayTags(dtDate);
+  $("dtOpts").innerHTML=TYPES.map(t=>`<button type="button" onclick="toggleDayTag('${t[0]}')" class="py-3 rounded-xl border text-sm font-bold ${cur.includes(t[0])?"bg-sky-500 border-sky-500 text-white":"bg-slate-50 border-slate-200 text-slate-600"}">${t[1]} ${t[2]}</button>`).join("");
+}
+function toggleDayTag(k){
+  const x=day(dtDate);let t=Array.isArray(x.tags)?[...x.tags]:[];
+  if(t.includes(k))t=t.filter(y=>y!==k);else t=k==="r"?["r"]:[...t.filter(y=>y!=="r"),k];
+  x.tags=t;saveW();renderDayType();render();
+}
+function dtGo(t){const d=dtDate;closeDayType();wd=d;planEdit=null;planFocus=-1;go(t)}
 function grow(){document.querySelectorAll('[data-f="plan"],[data-f="lib"]').forEach(t=>{if(t.scrollHeight){t.style.height="auto";t.style.height=t.scrollHeight+"px"}})}
 function render(){const m={plan:vPlan,lib:vLib,log:vLog,week:vWeek}[tab];if(m){$("v-"+tab).innerHTML=m();if(tab==="plan"||tab==="lib")grow();tick()}}
 
@@ -434,7 +469,7 @@ document.addEventListener("input",e=>{
 document.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.dataset.f==="plan"){e.preventDefault();const i=+e.target.dataset.i;day(wd).plan.splice(i+1,0,{t:"",c:false,l:0,k:"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]')[i+1];if(n)n.focus()}
   if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.id==="libTxt"){e.preventDefault();const lb=document.querySelector('[data-a="libadd"]');if(lb)lb.click()}
-  if(e.key==="Escape"){closeSheet();closeGoalModal();closeDateModal();closePicker();closeLink()}
+  if(e.key==="Escape"){closeSheet();closeGoalModal();closeDateModal();closePicker();closeLink();closeDayType()}
 });
 document.addEventListener("change",e=>{
   const t=e.target;
@@ -502,6 +537,7 @@ document.addEventListener("click",e=>{
     case"tc":startT(+$("cs").value);return;
     case"ts":TE=0;tick();if($("tm"))$("tm").textContent="0:00";return;
     case"go":wd=b.dataset.d;planEdit=null;go("log");return;
+    case"daytype":openDayType(b.dataset.d);return;
     case"wprev":wkOff--;break;case"wnext":wkOff++;break;case"wnow":wkOff=0;break;
   }
   render();
