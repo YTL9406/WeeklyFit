@@ -273,7 +273,7 @@ const ADD="w-full py-3 rounded-xl border border-dashed border-sky-400 text-sky-6
 const CK='<svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
 function migPlan(x){x.plan=(Array.isArray(x.plan)?x.plan:[]).map(p=>{p=typeof p==="string"?{t:p,c:false,l:0}:{...p,l:0};if(p.k===undefined){const a=parseAct(p.t);p.k=a.c;if(a.c)p.t=a.t}if(p.u===undefined)p.u="";return p})}
 let W={},wd=today(),wkOff=0,tab="plan",sub="current";
-const CATS=["熱身","肌力","耐力","爆發力","敏捷","有氧"];let planFocus=-1;
+const CATS=["熱身","肌力","核心","耐力","爆發力","敏捷","有氧"];let planFocus=-1;
 let LIB=[],picked=new Set(),libCatSel=CATS[0];
 function loadLib(){try{LIB=JSON.parse(localStorage.getItem("wk-lib")||"[]");if(!Array.isArray(LIB))LIB=[]}catch(e){LIB=[]}}
 function saveLib(){try{localStorage.setItem("wk-lib",JSON.stringify(LIB))}catch(e){}}
@@ -301,7 +301,7 @@ const navBar=(t,p,c,n)=>`<div class="flex items-center gap-2"><button data-a="${
 /* 訓練菜單專用：輕量日期列（無方框） */
 const navLite=(t,p,c,n)=>`<div class="flex items-center justify-between px-1"><button data-a="${p}" aria-label="前一天" class="w-11 h-11 text-2xl text-slate-400">‹</button><button data-a="${c}" class="px-4 py-2 text-base font-bold">${t}</button><button data-a="${n}" aria-label="後一天" class="w-11 h-11 text-2xl text-slate-400">›</button></div>`;
 
-const CATCLS={"熱身":"tg-a","肌力":"tg-b","耐力":"tg-c","爆發力":"tg-d","敏捷":"tg-e","有氧":"tg-f"};
+const CATCLS={"熱身":"tg-a","肌力":"tg-b","核心":"tg-g","耐力":"tg-c","爆發力":"tg-d","敏捷":"tg-e","有氧":"tg-f"};
 const tagH=(k,x="")=>k?`<span class="tg ${CATCLS[k]||"tg-n"} ${x}">${esc(k)}</span>`:"";
 const LKI='<svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 let planEdit=null,planEditNow=false;
