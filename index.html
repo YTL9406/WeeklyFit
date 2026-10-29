@@ -467,7 +467,7 @@ document.addEventListener("input",e=>{
   saveW();
 });
 document.addEventListener("keydown",e=>{
-  if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.dataset.f==="plan"){e.preventDefault();const i=+e.target.dataset.i;day(wd).plan.splice(i+1,0,{t:"",c:false,l:0,k:"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]')[i+1];if(n)n.focus()}
+  if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.dataset.f==="plan"){e.preventDefault();const i=+e.target.dataset.i;day(wd).plan.splice(i+1,0,{t:"",c:false,l:0,k:(day(wd).plan[i]||{}).k||"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]')[i+1];if(n)n.focus()}
   if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.id==="libTxt"){e.preventDefault();const lb=document.querySelector('[data-a="libadd"]');if(lb)lb.click()}
   if(e.key==="Escape"){closeSheet();closeGoalModal();closeDateModal();closePicker();closeLink();closeDayType()}
 });
@@ -524,7 +524,7 @@ document.addEventListener("click",e=>{
     }return;
     case"cat":{const c=b.dataset.c;let k=planFocus;if(!(k>=0&&k<d.plan.length)){k=d.plan.length-1;if(k<0||d.plan[k].t.trim()||d.plan[k].k){d.plan.push({t:"",c:false,l:0,k:"",u:""});k=d.plan.length-1}}
       d.plan[k].k=d.plan[k].k===c?"":c;saveW();render();const n=document.querySelectorAll('[data-f="plan"]')[k];if(n){n.focus();const L=n.value.length;n.setSelectionRange(L,L)}}return;
-    case"addplan":{d.plan.push({t:"",c:false,l:0,k:"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]');n[n.length-1].focus()}return;
+    case"addplan":{d.plan.push({t:"",c:false,l:0,k:d.plan.length?(d.plan[d.plan.length-1].k||""):"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]');n[n.length-1].focus()}return;
     case"chk":d.plan[i].c=!d.plan[i].c;saveW();break;
     case"delplan":d.plan.splice(i,1);planFocus=-1;saveW();break;
     case"addlog":d.logs.push(blank());saveW();break;
@@ -744,7 +744,7 @@ function generateAppIcons(){
   [[25,90],[55,90],[75,45],[95,135],[115,70],[130,90],[155,90]].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
   const u=cv.toDataURL("image/png");$("apple-touch-icon").href=u;$("app-favicon").href=u;
 }
-window.addEventListener("DOMContentLoaded",()=>{generateAppIcons();loadW();loadLib();load();updateThemeBtn();go("plan")});
+window.addEventListener("DOMContentLoaded",()=>{try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}generateAppIcons();loadW();loadLib();load();updateThemeBtn();go("plan")});
 </script>
 </body>
 </html>
