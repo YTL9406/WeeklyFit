@@ -223,6 +223,7 @@
   <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4">
     <div><h3 id="dtTitle" class="text-sm font-bold"></h3><p class="text-xs text-slate-500 mt-1">可複選；選「休息」會取消其他項目</p></div>
     <div id="dtOpts" class="grid grid-cols-2 gap-2"></div>
+    <button id="dtDone" type="button" onclick="toggleDayDone()" class="w-full py-3 rounded-xl border text-sm font-bold"></button>
     <div class="grid grid-cols-2 gap-2">
       <button onclick="dtGo('plan')" class="py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">訓練菜單</button>
       <button onclick="dtGo('log')" class="py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">訓練紀錄</button>
@@ -401,14 +402,13 @@ function vWeek(){
     const d=addDays(mon,i),x=W[d]||{},p=parseDate(d),tg={};
     (RM[d]||[]).forEach(r=>tg[r.type]=(tg[r.type]||0)+Number(r.duration));
     if((x.logs||[]).some(l=>!empty(l))&&!("重量訓練" in tg))tg["重量訓練"]=0;
-    const ks=Object.keys(tg),dn=ks.length>0,tags=dayTags(d);
-    if(dn)active++;
-    const hasPlan=(x.plan||[]).some(q=>q.t&&q.t.trim())||tags.some(k=>k!=="r");
+    const ks=Object.keys(tg),tags=dayTags(d),isDn=!!x.done;
+    if(isDn&&!(tags.length===1&&tags[0]==="r"))active++;
     const dW=ks.includes("重量訓練"),dB=ks.includes("羽球"),dC=ks.some(k=>!NONZ.includes(k));
     const pend=tags.filter(k=>!((k==="w"&&dW)||(k==="b"&&dB)||(k==="c"&&dC)));
     const doneChips=ks.map(k=>chip(esc(k)+(tg[k]?" "+tg[k]+" 分":""),"bg-sky-100 text-sky-700")).join("");
     const planChips=pend.map(k=>{const t=TYPES.find(y=>y[0]===k);return t?chip(t[1]+" "+t[2],k==="r"?"bg-slate-100 text-slate-600":"border border-sky-300 text-sky-600"):""}).join("");
-    const st=dn?`<span class="text-xs font-bold text-sky-600">已完成</span>`:(hasPlan?`<span class="text-xs text-slate-400">已安排</span>`:"");
+    const st=isDn?`<span class="text-xs font-bold text-emerald-600">已完成</span>`:"";
     rows+=`<button data-a="daytype" data-d="${d}" class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}</div></div><div class="flex-1 flex flex-wrap gap-1">${doneChips+planChips||`<span class="text-slate-300">—</span>`}</div>${st}<span class="text-slate-300 text-lg">›</span></button>`;
   }
   return `<div class="space-y-3">`+navBar(wkOff===0?"本週":wkOff<0?(-wkOff)+" 週前":wkOff+" 週後","wprev","wnow","wnext")+`<div class="text-center text-xs text-slate-500">本週運動 ${active} 天</div>`+rows+`</div>`;
@@ -419,6 +419,9 @@ function openDayType(d){dtDate=d;$("dtTitle").textContent=wl(d)+" 的訓練類�
 function closeDayType(){$("dtm").classList.add("hidden");dtDate=null}
 function renderDayType(){
   const cur=dayTags(dtDate);
+  const dn=!!(W[dtDate]&&W[dtDate].done),db=$("dtDone");
+  db.textContent=dn?"✅ 已完成（點一下取消）":"標記為已完成";
+  db.className="w-full py-3 rounded-xl border text-sm font-bold "+(dn?"bg-emerald-500 border-emerald-500 text-white":"bg-slate-50 border-slate-200 text-slate-600");
   $("dtOpts").innerHTML=TYPES.map(t=>`<button type="button" onclick="toggleDayTag('${t[0]}')" class="py-3 rounded-xl border text-sm font-bold ${cur.includes(t[0])?"bg-sky-500 border-sky-500 text-white":"bg-slate-50 border-slate-200 text-slate-600"}">${t[1]} ${t[2]}</button>`).join("");
 }
 function toggleDayTag(k){
@@ -426,6 +429,7 @@ function toggleDayTag(k){
   if(t.includes(k))t=t.filter(y=>y!==k);else t=k==="r"?["r"]:[...t.filter(y=>y!=="r"),k];
   x.tags=t;saveW();renderDayType();render();
 }
+function toggleDayDone(){const x=day(dtDate);x.done=!x.done;saveW();renderDayType();render()}
 function dtGo(t){const d=dtDate;closeDayType();wd=d;planEdit=null;planFocus=-1;go(t)}
 function grow(){document.querySelectorAll('[data-f="plan"],[data-f="lib"]').forEach(t=>{if(t.scrollHeight){t.style.height="auto";t.style.height=t.scrollHeight+"px"}})}
 function render(){const m={plan:vPlan,lib:vLib,log:vLog,week:vWeek}[tab];if(m){$("v-"+tab).innerHTML=m();if(tab==="plan"||tab==="lib")grow();tick()}}
