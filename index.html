@@ -13,8 +13,8 @@
 <script>(function(){var t=null;try{t=localStorage.getItem("WF_THEME")}catch(e){}var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)})()</script>
 <style>
   body{padding-top:calc(max(env(safe-area-inset-top,0px),47px) + 28px);padding-bottom:max(150px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));-webkit-tap-highlight-color:transparent}
-  body::before{content:"";position:fixed;top:0;left:0;right:0;height:calc(max(env(safe-area-inset-top,0px),47px) + 8px);background:#f8fafc;z-index:20;pointer-events:none}
-  html.dark body::before{background:#0f172a}
+  body::before{content:"";position:fixed;top:0;left:0;right:0;height:calc(max(env(safe-area-inset-top,0px),47px) + 8px);background:#E9EAEC;z-index:20;pointer-events:none}
+  html.dark body::before{background:#17181A}
   input,select,textarea{font-size:16px!important;border-radius:.75rem}
   input[type="date"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;height:46px;box-sizing:border-box;text-align:center}
   input[type="date"]::-webkit-date-and-time-value{text-align:center;margin:0}
@@ -24,26 +24,26 @@
   details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
   /* 訓練菜單：清單式輸入框 */
   .pi{background:transparent;border:1px solid transparent;color:inherit;transition:background .15s,border-color .15s;outline:none}
-  .pi:focus{background:#f8fafc;border-color:#e2e8f0}
+  .pi:focus{background:#E9EAEC;border-color:#D5D7DA}
   .pi.sm{font-size:14px!important}
   .pr{transition:opacity .2s}
   .pr.done{opacity:.55}
   .pctl{opacity:.3;transition:opacity .15s}
   .pr:focus-within .pctl{opacity:1}
-  .tg{display:inline-flex;align-items:center;padding:0 8px;border-radius:9999px;font-size:11px;font-weight:600;line-height:18px;white-space:nowrap;vertical-align:1px;background:#f1f5f9;color:#64748b}
-  .tgb{padding:5px 14px;font-size:13px;line-height:20px;border:1px solid #e2e8f0;background:transparent;color:#64748b;transition:background .15s,color .15s,border-color .15s}
+  .tg{display:inline-flex;align-items:center;padding:0 8px;border-radius:9999px;font-size:11px;font-weight:600;line-height:18px;white-space:nowrap;vertical-align:1px;background:#E3E4E7;color:#6B6F76}
+  .tgb{padding:5px 14px;font-size:13px;line-height:20px;border:1px solid #D5D7DA;background:transparent;color:#6B6F76;transition:background .15s,color .15s,border-color .15s}
   .tgb.on{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
-  html.dark .tg{background:#334155;color:#cbd5e1}
-  html.dark .tgb{background:transparent;border-color:#475569;color:#94a3b8}
+  html.dark .tg{background:#34373B;color:#C4C7CC}
+  html.dark .tgb{background:transparent;border-color:#44474C;color:#9A9DA3}
   html.dark .tgb.on{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
-  html.dark{color-scheme:dark;background:#0f172a}
-  html.dark .pi:focus{background:#0f172a;border-color:#334155}
-  .dark .bg-white{background:#1e293b}.dark .bg-white\/95{background:rgba(30,41,59,.95)}
-  .dark .bg-slate-50{background:#0f172a}.dark .bg-slate-100{background:#334155}.dark .bg-slate-200{background:#475569}
-  .dark .text-slate-900,.dark .text-slate-800{color:#f1f5f9}.dark .text-slate-700{color:#e2e8f0}
-  .dark .text-slate-600{color:#cbd5e1}.dark .text-slate-500{color:#94a3b8}
-  .dark .border-slate-100,.dark .border-slate-200,.dark .border-slate-200\/70{border-color:#334155}
-  .dark .border-white{border-color:#1e293b}
+  html.dark{color-scheme:dark;background:#17181A}
+  html.dark .pi:focus{background:#17181A;border-color:#34373B}
+  .dark .bg-white{background:#232528}.dark .bg-white\/95{background:rgba(35,37,40,.95)}
+  .dark .bg-slate-50{background:#17181A}.dark .bg-slate-100{background:#34373B}.dark .bg-slate-200{background:#44474C}
+  .dark .text-slate-900,.dark .text-slate-800{color:#ECECEC}.dark .text-slate-700{color:#DEDFE1}
+  .dark .text-slate-600{color:#C4C7CC}.dark .text-slate-500{color:#9A9DA3}.dark .text-slate-400{color:#7C8087}
+  .dark .border-slate-100,.dark .border-slate-200,.dark .border-slate-200\/70{border-color:#34373B}
+  .dark .border-white{border-color:#232528}
   .dark .bg-sky-50{background:rgba(12,74,110,.45)}.dark .border-sky-100{border-color:#075985}
   .dark .text-sky-600{color:#38bdf8}.dark .text-sky-900{color:#e0f2fe}.dark .text-sky-700{color:#7dd3fc}
   .dark .bg-sky-100{background:#0c4a6e}.dark .bg-sky-300{background:#0284c7}
@@ -51,7 +51,13 @@
   .dark .bg-emerald-100{background:#064e3b}.dark .text-emerald-800{color:#6ee7b7}
   .dark .bg-amber-100{background:#78350f}.dark .bg-orange-100{background:#7c2d12}.dark .text-orange-800{color:#fdba74}
   .dark .bg-rose-100{background:#881337}.dark .text-rose-800{color:#fda4af}
-  .dark .ring-slate-800{--tw-ring-color:#e2e8f0}.dark .ring-bg{stroke:#334155}.dark #toast{background:#475569}
+  .dark .ring-slate-800{--tw-ring-color:#e2e8f0}.dark .ring-bg{stroke:#34373B}.dark #toast{background:#44474C}
+  html .bg-slate-900{background-color:#17181A}
+  html:not(.dark) .bg-slate-50{background:#E9EAEC}html:not(.dark) .bg-white{background:#F4F5F6}html:not(.dark) .bg-white\/95{background:rgba(244,245,246,.95)}
+  html:not(.dark) .bg-slate-100{background:#E3E4E7}html:not(.dark) .bg-slate-200{background:#D5D7DA}
+  html:not(.dark) .border-slate-100,html:not(.dark) .border-slate-200,html:not(.dark) .border-slate-200\/70{border-color:#D5D7DA}html:not(.dark) .border-white{border-color:#F4F5F6}
+  html:not(.dark) .text-slate-900,html:not(.dark) .text-slate-800{color:#1F2124}html:not(.dark) .text-slate-700{color:#2E3135}html:not(.dark) .text-slate-600{color:#4A4E55}html:not(.dark) .text-slate-500{color:#6B6F76}html:not(.dark) .text-slate-400{color:#8A8E95}
+  html:not(.dark) .ring-bg{stroke:#D5D7DA}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen selection:bg-sky-500 selection:text-white">
@@ -743,7 +749,7 @@ function impBk(){
 }
 function generateAppIcons(){
   const cv=document.createElement("canvas");cv.width=cv.height=180;const ctx=cv.getContext("2d");
-  ctx.fillStyle="#0f172a";ctx.beginPath();ctx.roundRect?ctx.roundRect(0,0,180,180,40):ctx.rect(0,0,180,180);ctx.fill();
+  ctx.fillStyle="#17181A";ctx.beginPath();ctx.roundRect?ctx.roundRect(0,0,180,180,40):ctx.rect(0,0,180,180);ctx.fill();
   ctx.strokeStyle="#38bdf8";ctx.lineWidth=12;ctx.lineCap=ctx.lineJoin="round";ctx.beginPath();
   [[25,90],[55,90],[75,45],[95,135],[115,70],[130,90],[155,90]].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
   const u=cv.toDataURL("image/png");$("apple-touch-icon").href=u;$("app-favicon").href=u;
