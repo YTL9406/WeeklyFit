@@ -28,6 +28,10 @@
   .pi.sm{font-size:14px!important}
   .pr{transition:opacity .2s}
   .pr.done{opacity:.55}
+  .pr.drag-on{background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);opacity:1}
+  html.dark .pr.drag-on{background:#2c2e32}
+  .pk{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .grip{touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab}
   .pctl{opacity:.3;transition:opacity .15s}
   .pr:focus-within .pctl{opacity:1}
   .tg{display:inline-flex;align-items:center;padding:0 8px;border-radius:9999px;font-size:11px;font-weight:600;line-height:18px;white-space:nowrap;vertical-align:1px;background:#E3E4E7;color:#6B6F76}
@@ -216,10 +220,10 @@
     <div class="flex gap-2 justify-end"><button id="lnkClr" onclick="clearLink()" class="mr-auto px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">清除</button><button onclick="closeLink()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button><button onclick="saveLink()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">儲存</button></div>
   </div>
 </div>
-<div id="libm" onclick="if(event.target===this)closePicker()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-  <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+<div id="libm" onclick="if(event.target===this)closePicker()" class="fixed inset-0 bg-slate-900/40 z-50 flex p-4 hidden" style="overflow-y:auto;overscroll-behavior:contain">
+  <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3" style="margin:auto">
     <div class="flex justify-between items-center"><h3 class="text-sm font-bold">從動作庫加入</h3><button onclick="closePicker()" aria-label="關閉" class="p-1 text-slate-400">✕</button></div>
-    <div id="libList" class="max-h-[55vh] overflow-y-auto space-y-3"></div>
+    <div id="libList" class="max-h-[55vh] overflow-y-auto space-y-3 pk" style="max-height:min(55vh,55dvh)"></div>
     <button id="libAdd" onclick="addFromPicker()" class="w-full py-3 rounded-xl bg-sky-500 text-white text-sm font-bold"></button>
   </div>
 </div>
@@ -310,6 +314,7 @@ const navDate=()=>{const dt=parseDate(wd);return `<div><div class="flex items-ce
 const CATCLS={"熱身":"tg-a","肌力":"tg-b","核心":"tg-g","耐力":"tg-c","爆發力":"tg-d","敏捷":"tg-e","有氧":"tg-f"};
 const tagH=(k,x="")=>k?`<span class="tg ${CATCLS[k]||"tg-n"} ${x}">${esc(k)}</span>`:"";
 const LKI='<svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+const GRIP='<svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 let planEdit=null,planEditNow=false;
 function vPlan(){
   const d=day(wd);if(!d.plan.length)d.plan.push({t:"",c:false,l:0,k:"",u:""});
@@ -331,7 +336,7 @@ function vPlan(){
     }
     const ta=`<textarea rows="1" data-f="plan" data-i="${i}" placeholder="例如：胸推 12下/組 *3組" class="pi sm w-full min-w-0 px-2 py-2 text-sm font-semibold resize-none overflow-hidden leading-snug ${done?"line-through text-slate-400":""}">${esc(p.t)}</textarea>`;
     const ctl=`<div class="pctl flex shrink-0 items-center"><button data-a="savelib" data-i="${i}" aria-label="加入動作庫" class="w-8 h-10 text-lg ${inLib(p)?"text-sky-500":"text-slate-400"}">${inLib(p)?"★":"☆"}</button><button data-a="plink" data-i="${i}" aria-label="示範連結" class="w-8 h-10 flex items-center justify-center ${p.u?"text-sky-500":"text-slate-400"}">${LKI}</button><button data-a="delplan" data-i="${i}" aria-label="刪除" class="w-8 h-10 text-slate-400">✕</button></div>`;
-    return `<div class="pr ${done?"done":""} flex items-start gap-1.5" style="margin-top:${i>0?6:0}px">${CKB(p,i,p.k?"mt-8":"mt-2")}<div class="min-w-0 flex-1">${p.k?`<div class="px-2 pt-1">${tagH(p.k)}</div>`:""}${ta}</div>${ctl}</div>`}).join("");
+    return `<div data-row="${i}" class="pr ${done?"done":""} flex items-start gap-1.5" style="margin-top:${i>0?6:0}px"><button type="button" data-drag="${i}" aria-label="拖曳排序" class="grip w-6 h-10 shrink-0 flex items-center justify-center text-slate-400 ${p.k?"mt-6":""}">${GRIP}</button>${CKB(p,i,p.k?"mt-8":"mt-2")}<div class="min-w-0 flex-1">${p.k?`<div class="px-2 pt-1">${tagH(p.k)}</div>`:""}${ta}</div>${ctl}</div>`}).join("");
   const foot=ed?`<div class="flex items-center justify-between pt-2 mt-3 border-t border-slate-100"><button data-a="addplan" class="px-2 py-2 text-sm font-bold text-sky-600">＋ 新增項目</button><button data-a="openpick" class="px-2 py-2 text-sm font-semibold text-slate-500">從動作庫加入</button></div>`:"";
   return `<div class="space-y-3">`+navDate()+`<div class="${CARD} !p-4">${head}${chips}${rows}${foot}</div></div>`;
 }
@@ -369,8 +374,8 @@ function setLinkVal(v){
 }
 function saveLink(){const v=normUrl($("lnkIn").value);if(v===null){$("lnkErr").classList.remove("hidden");return}setLinkVal(v)}
 function clearLink(){setLinkVal("")}
-function openPicker(){picked.clear();renderPicker();$("libm").classList.remove("hidden")}
-function closePicker(){$("libm").classList.add("hidden")}
+function openPicker(){try{document.activeElement&&document.activeElement.blur()}catch(e){}picked.clear();renderPicker();$("libm").classList.remove("hidden");document.documentElement.style.overflow="hidden";const l=$("libList");if(l)l.scrollTop=0}
+function closePicker(){$("libm").classList.add("hidden");document.documentElement.style.overflow=""}
 function updPickBtn(){const b=$("libAdd");b.textContent=picked.size?`加入 ${picked.size} 項`:"請勾選要加入的動作";b.classList.toggle("opacity-50",!picked.size)}
 function renderPicker(){
   if(!LIB.length){$("libList").innerHTML=`<div class="py-6 text-center text-xs text-slate-400">動作庫還是空的<br>先到「動作庫」分頁新增動作吧</div>`;$("libAdd").classList.add("hidden");return}
@@ -469,6 +474,53 @@ document.addEventListener("change",e=>{
   if(t.dataset&&t.dataset.pk){if(t.checked)picked.add(t.dataset.pk);else picked.delete(t.dataset.pk);updPickBtn();return}
   if(t.id==="libCat"){libCatSel=t.value;return}
 });
+
+/* 訓練菜單：拖曳排序（編輯狀態下按住左側 ⋮⋮ 拖動） */
+let drg=null;
+function drgUpdate(){
+  const g=drg;if(!g)return;
+  const dy=(g.y-g.y0)+(window.scrollY-g.s0);
+  g.el.style.transform=`translateY(${dy}px)`;
+  const center=g.tops[g.from]+g.hs[g.from]/2+dy;
+  let to=0;for(let j=0;j<g.rows.length;j++){if(j!==g.from&&g.tops[j]+g.hs[j]/2<center)to++}
+  g.to=to;
+  g.rows.forEach((r,j)=>{if(j===g.from)return;let sh=0;if(g.from<j&&j<=to)sh=-g.size;else if(to<=j&&j<g.from)sh=g.size;r.style.transform=sh?`translateY(${sh}px)`:""});
+}
+function drgLoop(){
+  if(!drg)return;
+  const y=drg.y,H=window.innerHeight;let v=0;
+  if(y<130)v=-Math.ceil((130-y)/8);else if(y>H-170)v=Math.ceil((y-(H-170))/8);
+  if(v){window.scrollBy(0,v);drgUpdate()}
+  drg.raf=requestAnimationFrame(drgLoop);
+}
+function drgEnd(e,cancel){
+  if(!drg||(e&&e.pointerId!==drg.pid))return;
+  const g=drg;drg=null;cancelAnimationFrame(g.raf);
+  document.documentElement.style.webkitUserSelect="";document.documentElement.style.userSelect="";
+  if(!cancel&&g.to!==g.from){
+    const d=day(wd),it=d.plan.splice(g.from,1)[0];d.plan.splice(g.to,0,it);
+    planFocus=-1;saveW();render();
+  }else{
+    g.rows.forEach(r=>{r.style.transform="";r.style.transition="";r.style.zIndex="";r.style.position=""});
+    g.el.classList.remove("drag-on");
+  }
+}
+document.addEventListener("pointerdown",e=>{
+  const h=e.target.closest&&e.target.closest("[data-drag]");if(!h||drg)return;
+  const rows=[...document.querySelectorAll("#v-plan [data-row]")],from=+h.dataset.drag,el=rows[from];if(!el)return;
+  e.preventDefault();
+  try{document.activeElement&&document.activeElement.blur()}catch(_){}
+  const rc=rows.map(r=>r.getBoundingClientRect());
+  drg={rows,from,to:from,el,y0:e.clientY,y:e.clientY,s0:window.scrollY,tops:rc.map(r=>r.top+window.scrollY),hs:rc.map(r=>r.height),size:rc[from].height+6,pid:e.pointerId,raf:0};
+  try{h.setPointerCapture(e.pointerId)}catch(_){}
+  document.documentElement.style.webkitUserSelect="none";document.documentElement.style.userSelect="none";
+  rows.forEach((r,j)=>{r.style.transition=j===from?"none":"transform .15s"});
+  el.style.position="relative";el.style.zIndex="25";el.classList.add("drag-on");
+  drgLoop();
+});
+document.addEventListener("pointermove",e=>{if(!drg||e.pointerId!==drg.pid)return;e.preventDefault();drg.y=e.clientY;drgUpdate()},{passive:false});
+document.addEventListener("pointerup",e=>drgEnd(e,false));
+document.addEventListener("pointercancel",e=>drgEnd(e,true));
 document.addEventListener("focusin",e=>{if(e.target.dataset&&e.target.dataset.f==="plan")planFocus=+e.target.dataset.i});
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-a]");if(!b)return;
