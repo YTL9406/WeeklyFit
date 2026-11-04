@@ -690,7 +690,7 @@ function updateModalRangePreview(){const s=$("modalStartDateInput").value;if(s)$
 function saveDateModal(){const s=$("modalStartDateInput").value;if(s){appState.startDateStr=s;save();renderApp();closeDateModal()}}
 
 /* ============ 分頁 / 主題 / 備份 ============ */
-const TABS=[["plan","訓練菜單","list"],["week","一週紀錄","cal"],["cardio","有氧時數","activity"],["lib","動作庫","book"]];
+const TABS=[["plan","訓練菜單","list"],["lib","動作庫","book"],["cardio","有氧時數","activity"],["week","一週紀錄","cal"]];
 function updFab(){}
 function setSub(s){
   sub=s;$("viewCurrent").classList.toggle("hidden",s!=="current");$("viewHistory").classList.toggle("hidden",s!=="history");
