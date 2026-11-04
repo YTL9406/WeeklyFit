@@ -75,7 +75,6 @@
 <main class="max-w-md mx-auto w-full">
   <section id="v-plan"></section>
   <section id="v-lib" class="hidden"></section>
-  <section id="v-log" class="hidden"></section>
   <section id="v-week" class="hidden"></section>
   <section id="v-cardio" class="hidden space-y-4">
     <div id="seg" class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl text-sm font-semibold">
@@ -144,7 +143,6 @@
 
 
 
-<button id="lbtn" onclick="go(tab==='lib'?'plan':'lib')" aria-label="動作庫" class="hidden fixed right-4 z-30 w-12 h-12 rounded-full bg-white border border-slate-200 text-sky-600 shadow-lg items-center justify-center" style="bottom:calc(84px + env(safe-area-inset-bottom))"><i data-lucide="book" class="w-6 h-6"></i></button>
 <button id="tbtn" onclick="togglePanel()" aria-label="休息計時器" class="hidden fixed right-4 z-30 h-12 min-w-[3rem] px-3 rounded-full bg-white border border-slate-200 text-sky-600 shadow-lg items-center justify-center" style="bottom:calc(84px + env(safe-area-inset-bottom))"><span id="tbi"><i data-lucide="timer" class="w-6 h-6"></i></span><span id="tbt" class="hidden text-sm font-black tabular-nums"></span></button>
 <div id="tpanel" class="hidden fixed right-4 z-40 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 space-y-3" style="bottom:calc(144px + env(safe-area-inset-bottom))">
   <div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-600">休息計時器</span><button onclick="togglePanel()" class="p-1 text-slate-400" aria-label="收合"><i data-lucide="x" class="w-4 h-4"></i></button></div>
@@ -230,10 +228,7 @@
     <div><h3 id="dtTitle" class="text-sm font-bold"></h3><p class="text-xs text-slate-500 mt-1">可複選；選「休息」會取消其他項目</p></div>
     <div id="dtOpts" class="grid grid-cols-2 gap-2"></div>
     <button id="dtDone" type="button" onclick="toggleDayDone()" class="w-full py-3 rounded-xl border text-sm font-bold"></button>
-    <div class="grid grid-cols-2 gap-2">
-      <button onclick="dtGo('plan')" class="py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">訓練菜單</button>
-      <button onclick="dtGo('log')" class="py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">訓練紀錄</button>
-    </div>
+    <button onclick="dtGo('plan')" class="w-full py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">查看這天的訓練菜單</button>
     <button onclick="closeDayType()" class="w-full py-3 rounded-xl bg-sky-500 text-white text-sm font-bold">完成</button>
   </div>
 </div>
@@ -341,14 +336,18 @@ function vPlan(){
   return `<div class="space-y-3">`+navDate()+`<div class="${CARD} !p-4">${head}${chips}${rows}${foot}</div></div>`;
 }
 /* 動作庫 */
+let libEdit=false;
 function vLib(){
+  const ed=libEdit||!LIB.length;
   const opts=CATS.map(c=>`<option value="${c}" ${c===libCatSel?"selected":""}>${c}</option>`).join("")+`<option value="" ${libCatSel===""?"selected":""}>無分類</option>`;
   const form=`<div class="${CARD} !p-4 space-y-2"><div class="text-xs font-bold text-slate-600">新增動作</div><div class="flex gap-2"><select id="libCat" class="${INP} !w-28 shrink-0">${opts}</select><input id="libTxt" placeholder="例如：原地碎步：30秒/組 *3組" class="${INP} min-w-0 flex-1"></div><button data-a="libadd" class="w-full py-2.5 rounded-xl bg-sky-500 text-white text-sm font-bold">加入動作庫</button></div>`;
   const imp=`<button data-a="libimp" class="w-full py-3 rounded-xl border border-dashed border-sky-400 text-sky-600 text-sm font-bold">從菜單匯入（${wl(wd)}）</button>`;
+  const tg=LIB.length?`<div class="flex items-center justify-between px-1"><span class="text-xs font-semibold text-slate-500">共 ${LIB.length} 個動作${ed?"":"・有連結的點文字即可看影片"}</span><button data-a="libedit" class="px-3 py-1 rounded-lg text-xs font-bold ${ed?"bg-sky-500 text-white":"bg-slate-100 text-slate-600"}">${ed?"完成":"編輯"}</button></div>`:"";
   const lists=[...CATS,""].map(c=>{const it=LIB.filter(x=>(x.c||"")===c);if(!it.length)return"";
+    if(!ed)return `<div class="${CARD} !p-4"><div class="text-xs font-bold text-slate-500 pb-1">${c||"無分類"}（${it.length}）</div>`+it.map(x=>`<div class="py-2.5 border-b border-slate-100 last:border-0 text-sm font-semibold leading-snug break-words">${x.u?`<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer" class="text-sky-600 underline decoration-sky-300 underline-offset-2">${esc(x.t)}</a>`:esc(x.t)}</div>`).join("")+`</div>`;
     return `<div class="${CARD} !p-4"><div class="text-xs font-bold text-slate-500 pb-2">${c||"無分類"}（${it.length}）</div>`+it.map(x=>`<div class="flex items-start gap-1.5"><textarea rows="1" data-f="lib" data-id="${esc(x.id)}" class="pi text-sm font-semibold min-w-0 flex-1 px-2 py-2 resize-none overflow-hidden leading-snug">${esc(x.t)}</textarea><button data-a="liblink" data-id="${esc(x.id)}" aria-label="示範連結" class="w-8 h-10 shrink-0 flex items-center justify-center ${x.u?"text-sky-500":"text-slate-400"}">${LKI}</button><button data-a="libdel" data-id="${esc(x.id)}" aria-label="刪除" class="w-9 h-10 shrink-0 text-slate-400">✕</button></div>`).join("")+`</div>`}).join("");
   const none=`<div class="py-8 text-center text-slate-400 text-xs bg-white rounded-3xl border border-dashed border-slate-200">動作庫還是空的<br>在上方新增，或從菜單匯入</div>`;
-  return `<div class="space-y-3">`+form+imp+(LIB.length?lists:none)+`</div>`;
+  return `<div class="space-y-3">`+tg+(ed?form+imp:"")+(LIB.length?lists:none)+`</div>`;
 }
 let lnkCtx=null;
 function normUrl(v){v=(v||"").trim();if(!v)return"";if(!/^https?:\/\//i.test(v)){if(/^[a-z][a-z0-9+.\-]*:/i.test(v))return null;v="https://"+v}try{const u=new URL(v);return /^https?:$/.test(u.protocol)&&u.hostname.includes(".")?u.href:null}catch(e){return null}}
@@ -385,22 +384,6 @@ function addFromPicker(){
   while(d.plan.length&&!d.plan[d.plan.length-1].t.trim())d.plan.pop();
   [...picked].map(id=>LIB.find(x=>x.id===id)).filter(Boolean).forEach(x=>d.plan.push({t:x.t,k:x.c||"",u:x.u||"",c:false,l:0}));
   saveW();closePicker();render();
-}
-function vLog(){
-  const d=day(wd);if(!d.logs.length)d.logs.push(blank());
-  const pl=d.plan.filter(x=>x.l===0&&x.t.trim()).map(pLabel);
-  const used=new Set(d.logs.map(l=>l.n));
-  const G="grid grid-cols-[28px_1fr_1fr_32px_32px] gap-2";
-  return `<div class="space-y-4">`
-  
-  
-  +navDate()
-  +(pl.length?`<select id="planPick" class="${INP}"><option value="">今日菜單（共 ${pl.length} 項，選擇後帶入）</option>`+pl.map((x,k)=>`<option value="${k}">${used.has(x)?"✓ ":""}${esc(x)}</option>`).join("")+`</select>`:"")
-  +d.logs.map((l,i)=>`<div class="${CARD} !p-4 space-y-2"><div class="flex gap-2"><input data-f="n" data-i="${i}" value="${esc(l.n)}" placeholder="訓練項目（如：胸推）" class="${INP} !font-bold"><button data-a="dellog" data-i="${i}" class="${XB}">✕</button></div>
-  <div class="${G} text-[11px] text-slate-400 text-center"><span>組</span><span>重量 kg</span><span>次數</span><span></span><span></span></div>`
-  +l.sets.map((s,j)=>`<div class="${G} items-center"><b class="text-center text-sm text-slate-500">${j+1}</b><input data-f="w" data-i="${i}" data-j="${j}" value="${esc(s.w)}" inputmode="decimal" class="${INP} text-center"><input data-f="r" data-i="${i}" data-j="${j}" value="${esc(s.r)}" inputmode="numeric" class="${INP} text-center"><button data-a="cpset" data-i="${i}" data-j="${j}" aria-label="複製這一組" class="h-10 text-sky-600 font-bold text-xl">+</button><button data-a="delset" data-i="${i}" data-j="${j}" class="h-10 text-slate-400">✕</button></div>`).join("")
-  +`<button data-a="addset" data-i="${i}" class="w-full py-2.5 rounded-xl bg-slate-100 text-sky-600 text-sm font-semibold">＋ 新增一組</button><input data-f="note" data-i="${i}" value="${esc(l.note)}" placeholder="備註" class="${INP}"></div>`).join("")
-  +`<button data-a="addlog" class="${ADD}">＋ 新增項目</button></div>`;
 }
 function recMap(){const m={};[...appState.records,...appState.history.flatMap(h=>h.records||[])].forEach(r=>(m[r.date]=m[r.date]||[]).push(r));return m}
 function dayTags(d){const x=W[d];return x&&Array.isArray(x.tags)?x.tags:[]}
@@ -444,7 +427,7 @@ function toggleDayTag(k){
 function toggleDayDone(){const x=day(dtDate);x.done=!x.done;saveW();renderDayType();render()}
 function dtGo(t){const d=dtDate;closeDayType();wd=d;planEdit=null;planFocus=-1;go(t)}
 function grow(){document.querySelectorAll('[data-f="plan"],[data-f="lib"]').forEach(t=>{if(t.scrollHeight){t.style.height="auto";t.style.height=t.scrollHeight+"px"}})}
-function render(){const m={plan:vPlan,lib:vLib,log:vLog,week:vWeek}[tab];if(m){$("v-"+tab).innerHTML=m();if(tab==="plan"||tab==="lib")grow();tick()}}
+function render(){const m={plan:vPlan,lib:vLib,week:vWeek}[tab];if(m){$("v-"+tab).innerHTML=m();if(tab==="plan"||tab==="lib")grow();tick()}}
 
 /* 計時器 */
 let TE=0,ac=null,tpOpen=false;
@@ -492,11 +475,6 @@ document.addEventListener("change",e=>{
   if(t.dataset&&t.dataset.dp){if(t.value){wd=t.value;planFocus=-1;planEdit=null;render()}return}
   if(t.dataset&&t.dataset.pk){if(t.checked)picked.add(t.dataset.pk);else picked.delete(t.dataset.pk);updPickBtn();return}
   if(t.id==="libCat"){libCatSel=t.value;return}
-  if(t.id!=="planPick"||t.value==="")return;
-  const d=day(wd),pl=d.plan.filter(x=>x.l===0&&x.t.trim()),it=pl[+t.value];if(!it)return;
-  const last=d.logs[d.logs.length-1],nl=blank();nl.n=pLabel(it);
-  if(last&&empty(last))d.logs[d.logs.length-1]=nl;else d.logs.push(nl);
-  saveW();render();
 });
 document.addEventListener("focusin",e=>{if(e.target.dataset&&e.target.dataset.f==="plan")planFocus=+e.target.dataset.i});
 document.addEventListener("click",e=>{
@@ -520,6 +498,7 @@ document.addEventListener("click",e=>{
     }return;
     case"plink":openLink({kind:"plan",i});return;
     case"liblink":openLink({kind:"lib",id:b.dataset.id});return;
+    case"libedit":libEdit=!libEdit;break;
     case"pedit":{const was=planEditNow;planEdit=!was;if(was)d.plan=d.plan.filter(p=>p.t.trim());break}
     case"openpick":openPicker();return;
     case"libadd":{const t=$("libTxt").value.trim().replace(/^【[^】]*】\s*/,""),c=$("libCat").value;libCatSel=c;if(!t)return;if(LIB.some(x=>x.c===c&&x.t===t)){showToast("動作庫已有相同動作");return}LIB.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),c,t});saveLib();render();const n=$("libTxt");if(n)n.focus()}return;
@@ -544,16 +523,9 @@ document.addEventListener("click",e=>{
     case"addplan":{d.plan.push({t:"",c:false,l:0,k:d.plan.length?(d.plan[d.plan.length-1].k||""):"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]');n[n.length-1].focus()}return;
     case"chk":d.plan[i].c=!d.plan[i].c;saveW();break;
     case"delplan":d.plan.splice(i,1);planFocus=-1;saveW();break;
-    case"addlog":d.logs.push(blank());saveW();break;
-    case"dellog":d.logs.splice(i,1);saveW();break;
-    case"addset":d.logs[i].sets.push({w:"",r:""});saveW();break;
-    case"cpset":{const st=d.logs[i].sets,j=+b.dataset.j;st.splice(j+1,0,{w:st[j].w,r:st[j].r});saveW();break}
-    case"delset":{const st=d.logs[i].sets;st.splice(+b.dataset.j,1);if(!st.length)st.push({w:"",r:""});saveW();break}
-    case"fromplan":{const last=d.logs[d.logs.length-1],nl=blank();nl.n=b.dataset.n;if(last&&empty(last))d.logs[d.logs.length-1]=nl;else d.logs.push(nl);saveW();break}
     case"t":startT(+b.dataset.s);return;
     case"tc":startT(+$("cs").value);return;
     case"ts":TE=0;tick();if($("tm"))$("tm").textContent="0:00";return;
-    case"go":wd=b.dataset.d;planEdit=null;go("log");return;
     case"daytype":openDayType(b.dataset.d);return;
     case"wprev":wkOff--;break;case"wnext":wkOff++;break;case"wnow":wkOff=0;break;
   }
@@ -668,7 +640,7 @@ document.addEventListener("click",e=>{
 
 function fillSelects(rec){
   const days=Array.from({length:7},(_,i)=>addDays(appState.startDateStr,i));
-  const pref=(tab==="plan"||tab==="log")&&days.includes(wd)?wd:today(),sel=rec?rec.date:days.includes(pref)?pref:days[0];if(!days.includes(sel))days.push(sel);
+  const pref=tab==="plan"&&days.includes(wd)?wd:today(),sel=rec?rec.date:days.includes(pref)?pref:days[0];if(!days.includes(sel))days.push(sel);
   $("inDate").innerHTML=days.map(d=>`<option value="${d}" ${d===sel?"selected":""}>${fmt(d)} (${WEEK[parseDate(d).getDay()]})</option>`).join("");
   const type=rec?rec.type:appState.last.type,base=[...new Set([...DEFAULT_TYPES,...appState.types])],types=base.includes(type)?base:[...base,type];
   $("inType").innerHTML=types.map(t=>`<option value="${esc(t)}" ${t===type?"selected":""}>${esc(t)}</option>`).join("");
@@ -718,7 +690,7 @@ function updateModalRangePreview(){const s=$("modalStartDateInput").value;if(s)$
 function saveDateModal(){const s=$("modalStartDateInput").value;if(s){appState.startDateStr=s;save();renderApp();closeDateModal()}}
 
 /* ============ 分頁 / 主題 / 備份 ============ */
-const TABS=[["plan","訓練菜單","list"],["log","訓練紀錄","chart"],["week","一週紀錄","cal"],["cardio","有氧時數","activity"],["lib","動作庫","book"]];
+const TABS=[["plan","訓練菜單","list"],["week","一週紀錄","cal"],["cardio","有氧時數","activity"],["lib","動作庫","book"]];
 function updFab(){}
 function setSub(s){
   sub=s;$("viewCurrent").classList.toggle("hidden",s!=="current");$("viewHistory").classList.toggle("hidden",s!=="history");
@@ -732,7 +704,7 @@ function go(t){
   $("hico").innerHTML=`<i data-lucide="${TABS.find(x=>x[0]===t)[2]}" class="w-6 h-6"></i>`;
   $("ttl").textContent=TABS.find(x=>x[0]===t)[1];
   if(t==="cardio"){setSub(sub);renderApp()}else render();
-  const lv=t==="plan"||t==="lib",la=t==="lib",lb=$("lbtn");lb.classList.toggle("hidden",!lv);lb.classList.toggle("flex",lv);["!bg-sky-500","!text-white","!border-sky-500"].forEach(c=>lb.classList.toggle(c,la));const on=t==="log";$("tbtn").classList.toggle("hidden",!on);$("tbtn").classList.toggle("flex",on);lucide.createIcons();window.scrollTo({top:0});
+  if(t!=="lib")libEdit=false;const on=t==="plan";$("tbtn").classList.toggle("hidden",!on);$("tbtn").classList.toggle("flex",on);lucide.createIcons();window.scrollTo({top:0});
 }
 function updateThemeBtn(){$("themeBtn").innerHTML=`<i data-lucide="${document.documentElement.classList.contains("dark")?"sun":"moon"}" class="w-5 h-5"></i>`}
 function toggleTheme(){const d=document.documentElement.classList.toggle("dark");try{localStorage.setItem("WF_THEME",d?"dark":"light")}catch(e){}updateThemeBtn();lucide.createIcons()}
