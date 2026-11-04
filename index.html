@@ -342,7 +342,7 @@ function vLib(){
   const opts=CATS.map(c=>`<option value="${c}" ${c===libCatSel?"selected":""}>${c}</option>`).join("")+`<option value="" ${libCatSel===""?"selected":""}>無分類</option>`;
   const form=`<div class="${CARD} !p-4 space-y-2"><div class="text-xs font-bold text-slate-600">新增動作</div><div class="flex gap-2"><select id="libCat" class="${INP} !w-28 shrink-0">${opts}</select><input id="libTxt" placeholder="例如：原地碎步：30秒/組 *3組" class="${INP} min-w-0 flex-1"></div><button data-a="libadd" class="w-full py-2.5 rounded-xl bg-sky-500 text-white text-sm font-bold">加入動作庫</button></div>`;
   const imp=`<button data-a="libimp" class="w-full py-3 rounded-xl border border-dashed border-sky-400 text-sky-600 text-sm font-bold">從菜單匯入（${wl(wd)}）</button>`;
-  const tg=LIB.length?`<div class="flex items-center justify-between px-1"><span class="text-xs font-semibold text-slate-500">共 ${LIB.length} 個動作${ed?"":"・有連結的點文字即可看影片"}</span><button data-a="libedit" class="px-3 py-1 rounded-lg text-xs font-bold ${ed?"bg-sky-500 text-white":"bg-slate-100 text-slate-600"}">${ed?"完成":"編輯"}</button></div>`:"";
+  const tg=LIB.length?`<div class="space-y-2"><button data-a="libedit" class="w-full py-3 rounded-xl text-sm font-bold ${ed?"border border-sky-400 text-sky-600":"bg-sky-500 text-white"}">${ed?"完成":"＋ 新增 / 編輯動作"}</button><div class="px-1 text-xs font-semibold text-slate-500">共 ${LIB.length} 個動作${ed?"":"・有連結的點文字即可看影片"}</div></div>`:"";
   const lists=[...CATS,""].map(c=>{const it=LIB.filter(x=>(x.c||"")===c);if(!it.length)return"";
     if(!ed)return `<div class="${CARD} !p-4"><div class="text-xs font-bold text-slate-500 pb-1">${c||"無分類"}（${it.length}）</div>`+it.map(x=>`<div class="py-2.5 border-b border-slate-100 last:border-0 text-sm font-semibold leading-snug break-words">${x.u?`<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer" class="text-sky-600 underline decoration-sky-300 underline-offset-2">${esc(x.t)}</a>`:esc(x.t)}</div>`).join("")+`</div>`;
     return `<div class="${CARD} !p-4"><div class="text-xs font-bold text-slate-500 pb-2">${c||"無分類"}（${it.length}）</div>`+it.map(x=>`<div class="flex items-start gap-1.5"><textarea rows="1" data-f="lib" data-id="${esc(x.id)}" class="pi text-sm font-semibold min-w-0 flex-1 px-2 py-2 resize-none overflow-hidden leading-snug">${esc(x.t)}</textarea><button data-a="liblink" data-id="${esc(x.id)}" aria-label="示範連結" class="w-8 h-10 shrink-0 flex items-center justify-center ${x.u?"text-sky-500":"text-slate-400"}">${LKI}</button><button data-a="libdel" data-id="${esc(x.id)}" aria-label="刪除" class="w-9 h-10 shrink-0 text-slate-400">✕</button></div>`).join("")+`</div>`}).join("");
@@ -385,26 +385,19 @@ function addFromPicker(){
   [...picked].map(id=>LIB.find(x=>x.id===id)).filter(Boolean).forEach(x=>d.plan.push({t:x.t,k:x.c||"",u:x.u||"",c:false,l:0}));
   saveW();closePicker();render();
 }
-function recMap(){const m={};[...appState.records,...appState.history.flatMap(h=>h.records||[])].forEach(r=>(m[r.date]=m[r.date]||[]).push(r));return m}
 function dayTags(d){const x=W[d];return x&&Array.isArray(x.tags)?x.tags:[]}
 const md=d=>{const x=parseDate(d);return (x.getMonth()+1)+"/"+x.getDate()};
 const weekNav=(t,mon)=>`<div><div class="flex items-center gap-2"><button data-a="wprev" aria-label="上一週" class="${NB}">‹</button><div class="flex-1 py-2 bg-white rounded-xl border border-slate-100 shadow-sm text-center leading-tight"><div class="font-bold">${t}</div><div class="text-[11px] text-slate-400 mt-0.5">${md(mon)} – ${md(addDays(mon,6))}</div></div><button data-a="wnext" aria-label="下一週" class="${NB}">›</button></div><div class="h-12 flex items-center justify-center">${wkOff!==0?`<button data-a="wnow" class="${CHIP}">回到本週</button>`:""}</div></div>`;
 function vWeek(){
   const mon=addDays(today(),-((new Date().getDay()+6)%7)+wkOff*7);
-  let active=0,rows="";const RM=recMap();
+  let active=0,rows="";
   const chip=(t,c)=>`<span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${c}">${t}</span>`;
   for(let i=0;i<7;i++){
-    const d=addDays(mon,i),x=W[d]||{},p=parseDate(d),tg={};
-    (RM[d]||[]).forEach(r=>tg[r.type]=(tg[r.type]||0)+Number(r.duration));
-    if((x.logs||[]).some(l=>!empty(l))&&!("重量訓練" in tg))tg["重量訓練"]=0;
-    const ks=Object.keys(tg),tags=dayTags(d),isDn=!!x.done;
+    const d=addDays(mon,i),x=W[d]||{},p=parseDate(d),tags=dayTags(d),isDn=!!x.done;
     if(isDn&&!(tags.length===1&&tags[0]==="r"))active++;
-    const dW=ks.includes("重量訓練"),dB=ks.includes("羽球"),dC=ks.some(k=>!NONZ.includes(k));
-    const pend=tags.filter(k=>!((k==="w"&&dW)||(k==="b"&&dB)||(k==="c"&&dC)));
-    const doneChips=ks.map(k=>chip(esc(k)+(tg[k]?" "+tg[k]+" 分":""),"bg-sky-100 text-sky-700")).join("");
-    const planChips=pend.map(k=>{const t=TYPES.find(y=>y[0]===k);return t?chip(t[1]+" "+t[2],k==="r"?"bg-slate-100 text-slate-600":"border border-sky-300 text-sky-600"):""}).join("");
+    const planChips=tags.map(k=>{const t=TYPES.find(y=>y[0]===k);return t?chip(t[1]+" "+t[2],k==="r"?"bg-slate-100 text-slate-600":"border border-sky-300 text-sky-600"):""}).join("");
     const st=isDn?`<span class="text-xs font-bold text-emerald-600">已完成</span>`:"";
-    rows+=`<button data-a="daytype" data-d="${d}" class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}</div></div><div class="flex-1 flex flex-wrap gap-1">${doneChips+planChips||`<span class="text-slate-300">—</span>`}</div>${st}<span class="text-slate-300 text-lg">›</span></button>`;
+    rows+=`<button data-a="daytype" data-d="${d}" class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}</div></div><div class="flex-1 flex flex-wrap gap-1">${planChips||`<span class="text-slate-300">—</span>`}</div>${st}<span class="text-slate-300 text-lg">›</span></button>`;
   }
   return `<div class="space-y-3">`+weekNav(wkOff===0?"本週":wkOff<0?(-wkOff)+" 週前":wkOff+" 週後",mon)+`<div class="text-center text-xs text-slate-500">本週運動 ${active} 天</div>`+rows+`</div>`;
 }
@@ -540,7 +533,7 @@ const ZONES=[
   ["Zone 3","#f59e0b","bg-amber-100 text-amber-800","有氧耐力 / 70-80% Max HR"],
   ["Zone 4","#f97316","bg-orange-100 text-orange-800","無氧閾值 / 80-90% Max HR"],
   ["Zone 5","#f43f5e","bg-rose-100 text-rose-800","極限爆發 / 90-100% Max HR"]];
-const DEFAULT_TYPES=["慢跑 / 超慢跑","快走 / 坡度走","飛輪 / 自行車","橢圓機 / 踏步機","划船機","游泳","重量訓練","羽球","敏捷訓練","其他運動"];
+const DEFAULT_TYPES=["慢跑 / 超慢跑","快走 / 坡度走","飛輪 / 自行車","橢圓機 / 踏步機","划船機","游泳","其他運動"];
 const NONZ=["重量訓練","羽球","敏捷訓練"];
 const WEEK=["日","一","二","三","四","五","六"];
 const CIRC=2*Math.PI*32;
@@ -563,7 +556,7 @@ function sanitize(d){
   out.history=(Array.isArray(d.history)?d.history:[]).filter(h=>h&&h.startDateStr).map(h=>{
     const records=recs(h.records),st=calcStats(records);
     return{...h,endDateStr:h.endDateStr||endOf(h.startDateStr),targetMinutes:num(h.targetMinutes,200),totalMinutes:Number(h.totalMinutes)||0,records,zones:h.zones||(records.length?st.zones:{"Zone 2":Number(h.z2Minutes)||0,"Zone 3":Number(h.z3Minutes)||0}),recordsCount:h.recordsCount??records.length}});
-  out.types=Array.isArray(d.types)&&d.types.length?d.types.map(String):[...DEFAULT_TYPES];
+  out.types=Array.isArray(d.types)&&d.types.length?d.types.map(String).filter(t=>!NONZ.includes(t)):[...DEFAULT_TYPES];if(!out.types.length)out.types=[...DEFAULT_TYPES];
   out.last=d.last&&typeof d.last==="object"?d.last:appState.last;
   out.lastBackup=d.lastBackup||null;
   return out;
@@ -642,9 +635,9 @@ function fillSelects(rec){
   const days=Array.from({length:7},(_,i)=>addDays(appState.startDateStr,i));
   const pref=tab==="plan"&&days.includes(wd)?wd:today(),sel=rec?rec.date:days.includes(pref)?pref:days[0];if(!days.includes(sel))days.push(sel);
   $("inDate").innerHTML=days.map(d=>`<option value="${d}" ${d===sel?"selected":""}>${fmt(d)} (${WEEK[parseDate(d).getDay()]})</option>`).join("");
-  const type=rec?rec.type:appState.last.type,base=[...new Set([...DEFAULT_TYPES,...appState.types])],types=base.includes(type)?base:[...base,type];
+  const lastGone=NONZ.includes(appState.last.type),type=rec?rec.type:lastGone?DEFAULT_TYPES[0]:appState.last.type,base=[...new Set([...DEFAULT_TYPES,...appState.types])],types=base.includes(type)?base:[...base,type];
   $("inType").innerHTML=types.map(t=>`<option value="${esc(t)}" ${t===type?"selected":""}>${esc(t)}</option>`).join("");
-  const zone=rec?rec.zone:appState.last.zone;
+  const zone=rec?rec.zone:lastGone?"Zone 2":appState.last.zone;
   $("inZone").innerHTML=ZONES.map(z=>`<option value="${z[0]}" ${z[0]===zone?"selected":""}>${z[0]} (${z[3]})</option>`).join("")+`<option value="無" ${zone==="無"?"selected":""}>無（不計入有氧時數）</option>`;
 }
 function openSheet(id){
@@ -691,6 +684,21 @@ function saveDateModal(){const s=$("modalStartDateInput").value;if(s){appState.s
 
 /* ============ 分頁 / 主題 / 備份 ============ */
 const TABS=[["plan","訓練菜單","list"],["lib","動作庫","book"],["cardio","有氧時數","activity"],["week","一週紀錄","cal"]];
+const FABL={plan:"新增訓練動作",lib:"新增動作到動作庫",cardio:"新增有氧紀錄",week:"設定今天的訓練類型"};
+/* 中間的 + 按鈕：依目前分頁做不同的事 */
+function fab(){
+  if(tab==="cardio"){openSheet();return}
+  if(tab==="week"){
+    openDayType(today());return;
+  }
+  if(tab==="lib"){libEdit=true;render();window.scrollTo({top:0,behavior:"smooth"});const n=$("libTxt");if(n)n.focus();return}
+  if(tab==="plan"){
+    const d=day(wd),last=d.plan[d.plan.length-1];planEdit=true;
+    if(!last||last.t.trim())d.plan.push({t:"",c:false,l:0,k:last?(last.k||""):"",u:""});
+    saveW();render();
+    const n=document.querySelectorAll('[data-f="plan"]');if(n.length)n[n.length-1].focus();
+  }
+}
 function updFab(){}
 function setSub(s){
   sub=s;$("viewCurrent").classList.toggle("hidden",s!=="current");$("viewHistory").classList.toggle("hidden",s!=="history");
@@ -700,7 +708,7 @@ function setSub(s){
 function go(t){
   tab=t;TABS.forEach(x=>$("v-"+x[0]).classList.toggle("hidden",x[0]!==t));
   const nb=x=>`<button onclick="go('${x[0]}')" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold ${x[0]===t?"text-sky-500":"text-slate-400"}"><i data-lucide="${x[2]}" class="w-6 h-6"></i>${x[1]}</button>`;
-  $("nav").innerHTML=nb(TABS[0])+nb(TABS[1])+`<button onclick="openSheet()" aria-label="新增運動紀錄" class="mx-auto -mt-6 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center border-4 border-white"><i data-lucide="plus" class="w-7 h-7"></i></button>`+nb(TABS[2])+nb(TABS[3]);
+  $("nav").innerHTML=nb(TABS[0])+nb(TABS[1])+`<button onclick="fab()" aria-label="${FABL[t]}" class="mx-auto -mt-6 w-14 h-14 rounded-full bg-sky-500 active:bg-sky-700 text-white shadow-lg shadow-sky-300/50 flex items-center justify-center border-4 border-white"><i data-lucide="plus" class="w-7 h-7"></i></button>`+nb(TABS[2])+nb(TABS[3]);
   $("hico").innerHTML=`<i data-lucide="${TABS.find(x=>x[0]===t)[2]}" class="w-6 h-6"></i>`;
   $("ttl").textContent=TABS.find(x=>x[0]===t)[1];
   if(t==="cardio"){setSub(sub);renderApp()}else render();
