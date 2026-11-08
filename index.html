@@ -147,6 +147,7 @@
 
 
 
+<button id="pbtn" onclick="openPd()" aria-label="經期紀錄" class="hidden fixed right-4 z-30 w-11 h-11 rounded-full bg-white border border-slate-200 shadow-md items-center justify-center" style="bottom:calc(84px + env(safe-area-inset-bottom));color:#fb7185"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></button>
 <button id="tbtn" onclick="togglePanel()" aria-label="休息計時器" class="hidden fixed right-4 z-30 h-12 min-w-[3rem] px-3 rounded-full bg-white border border-slate-200 text-sky-600 shadow-lg items-center justify-center" style="bottom:calc(84px + env(safe-area-inset-bottom))"><span id="tbi"><i data-lucide="timer" class="w-6 h-6"></i></span><span id="tbt" class="hidden text-sm font-black tabular-nums"></span></button>
 <div id="tpanel" class="hidden fixed right-4 z-40 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 space-y-3" style="bottom:calc(144px + env(safe-area-inset-bottom))">
   <div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-600">休息計時器</span><button onclick="togglePanel()" class="p-1 text-slate-400" aria-label="收合"><i data-lucide="x" class="w-4 h-4"></i></button></div>
@@ -234,6 +235,21 @@
     <button id="dtDone" type="button" onclick="toggleDayDone()" class="w-full py-3 rounded-xl border text-sm font-bold"></button>
     <button onclick="dtGo('plan')" class="w-full py-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">查看這天的訓練菜單</button>
     <button onclick="closeDayType()" class="w-full py-3 rounded-xl bg-sky-500 text-white text-sm font-bold">完成</button>
+  </div>
+</div>
+<div id="pdm" onclick="if(event.target===this)closePd()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex p-4 hidden" style="overflow-y:auto;overscroll-behavior:contain">
+  <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4" style="margin:auto">
+    <div class="flex justify-between items-center"><h3 id="pdTitle" class="text-sm font-bold">經期紀錄</h3><button onclick="closePd()" aria-label="關閉" class="p-1 text-slate-400">✕</button></div>
+    <div class="space-y-3">
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">第一天日期</label><input type="date" id="pdDate" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 font-medium" /></div>
+      <div>
+        <div class="flex justify-between items-center mb-1.5"><label class="text-xs font-semibold text-slate-600">總共幾天</label><div id="pdQuick" class="flex gap-1.5"></div></div>
+        <input type="number" id="pdDaysIn" inputmode="numeric" min="1" max="31" placeholder="例如：5" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 text-sm font-medium" />
+      </div>
+      <p id="pdErr" class="text-xs text-rose-500 hidden"></p>
+      <div class="flex gap-2"><button id="pdCancel" type="button" onclick="pdEditRow(null)" class="hidden px-4 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold">取消</button><button id="pdSave" type="button" onclick="savePdForm()" class="flex-1 py-3 rounded-xl bg-sky-500 active:bg-sky-700 text-white text-sm font-bold">新增紀錄</button></div>
+    </div>
+    <div class="border-t border-slate-100 pt-3"><div id="pdSum" class="text-xs text-slate-500 pb-3"></div><div id="pdCount" class="text-[11px] font-bold text-slate-400 pb-1"></div><div id="pdList"></div></div>
   </div>
 </div>
 <div id="toast" class="fixed left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white text-xs rounded-xl px-4 py-3 shadow-lg items-center gap-3" style="bottom:calc(84px + env(safe-area-inset-bottom))"></div>
@@ -401,10 +417,68 @@ function vWeek(){
     const d=addDays(mon,i),x=W[d]||{},p=parseDate(d),tags=dayTags(d),isDn=!!x.done;
     if(isDn&&!(tags.length===1&&tags[0]==="r"))active++;
     const planChips=tags.map(k=>{const t=TYPES.find(y=>y[0]===k);return t?chip(t[1]+" "+t[2],k==="r"?"bg-slate-100 text-slate-600":"border border-sky-300 text-sky-600"):""}).join("");
+    const pk=pdOn(d),pdot=pk?`<span title="經期第${pk}天" style="display:inline-block;width:6px;height:6px;border-radius:9999px;background:#fb7185;margin-left:5px;vertical-align:1px"></span>`:"";
     const st=isDn?`<span class="text-xs font-bold text-emerald-600">已完成</span>`:"";
-    rows+=`<button data-a="daytype" data-d="${d}" class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}</div></div><div class="flex-1 flex flex-wrap gap-1">${planChips||`<span class="text-slate-300">—</span>`}</div>${st}<span class="text-slate-300 text-lg">›</span></button>`;
+    rows+=`<button data-a="daytype" data-d="${d}" class="w-full text-left flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm border ${d===today()?"border-2 border-sky-500":"border-slate-100"}"><div class="w-14"><div class="font-bold">${WN[i]}</div><div class="text-xs text-slate-400">${p.getMonth()+1}/${p.getDate()}${pdot}</div></div><div class="flex-1 flex flex-wrap gap-1">${planChips||`<span class="text-slate-300">—</span>`}</div>${st}<span class="text-slate-300 text-lg">›</span></button>`;
   }
-  return `<div class="space-y-3">`+weekNav(wkOff===0?"本週":wkOff<0?(-wkOff)+" 週前":wkOff+" 週後",mon)+`<div class="text-center text-xs text-slate-500">本週運動 ${active} 天</div>`+rows+`</div>`;
+  return `<div class="space-y-3">`+weekNav(wkOff===0?"本週":wkOff<0?(-wkOff)+" 週前":wkOff+" 週後",mon)+`<div class="text-center text-xs text-slate-500">本週運動 ${active} 天</div>`+rows+pdCard()+`</div>`;
+}
+/* 經期紀錄：只記第一天 + 總天數 */
+let PD=[],pdEdit=null;
+const daysBetween=(a,b)=>Math.round((parseDate(b)-parseDate(a))/864e5);
+function cleanPd(a){const seen=new Set();return(Array.isArray(a)?a:[]).filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.s)&&Number(x.n)>=1).map(x=>({id:String(x.id||Date.now().toString(36)+Math.random().toString(36).slice(2,6)),s:x.s,n:Math.min(Math.round(Number(x.n)),31)})).filter(x=>!seen.has(x.s)&&seen.add(x.s)).sort((a,b)=>b.s.localeCompare(a.s))}
+function mergePd(a){const m=new Map(PD.map(x=>[x.s,x]));cleanPd(a).forEach(x=>m.set(x.s,x));return cleanPd([...m.values()])}
+function loadPd(){try{PD=cleanPd(JSON.parse(localStorage.getItem("wk-period")||"[]"))}catch(e){PD=[]}}
+function savePd(){try{localStorage.setItem("wk-period",JSON.stringify(PD))}catch(e){showToast("儲存失敗（可能是無痕模式或空間已滿）")}}
+const pdOn=d=>{for(const x of PD){const k=daysBetween(x.s,d);if(k>=0&&k<x.n)return k+1}return 0};
+function pdSummary(){
+  if(!PD.length)return["尚無紀錄","點開來新增第一筆"];
+  const L=PD[0],t=today(),k=pdOn(t);
+  const l1=k?`目前第 ${k} 天`:`上次 ${md(L.s)} 開始，共 ${L.n} 天`;
+  const gaps=[];for(let i=0;i<Math.min(PD.length-1,6);i++){const g=daysBetween(PD[i+1].s,PD[i].s);if(g>=15&&g<=60)gaps.push(g)}
+  let l2="";
+  if(gaps.length){const avg=Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length),nx=addDays(L.s,avg),df=daysBetween(t,nx);
+    l2=`平均週期 ${avg} 天・`+(df>0?`預計 ${md(nx)} 開始（${df} 天後）`:df===0?"預計今天開始":`預計日 ${md(nx)} 已過 ${-df} 天`)}
+  return[l1,l2];
+}
+function pdCard(){return""}
+function pdFill(){
+  const r=pdEdit&&PD.find(x=>x.id===pdEdit);
+  $("pdDate").value=r?r.s:today();
+  $("pdDaysIn").value=r?r.n:(PD[0]?PD[0].n:5);
+  $("pdErr").classList.add("hidden");
+  $("pdTitle").textContent=r?"編輯經期紀錄":"經期紀錄";
+  $("pdSave").textContent=r?"儲存修改":"新增紀錄";
+  $("pdCancel").classList.toggle("hidden",!r);
+}
+function renderPd(){
+  $("pdQuick").innerHTML=[3,4,5,6,7].map(n=>`<button type="button" onclick="$('pdDaysIn').value=${n}" class="px-2.5 py-1.5 text-xs bg-slate-100 text-slate-700 font-semibold rounded-md border border-slate-200">${n}</button>`).join("");
+  $("pdSum").textContent=PD.length?pdSummary().filter(Boolean).join("\n"):"";$("pdSum").style.whiteSpace="pre-line";
+  $("pdCount").textContent=PD.length?`歷史紀錄（${PD.length}）・點一筆可編輯`:"";
+  $("pdList").innerHTML=PD.length?PD.map((x,i)=>{
+    const p=PD[i+1],cyc=p?daysBetween(p.s,x.s):0,w=WN[(parseDate(x.s).getDay()+6)%7];
+    return `<div class="flex items-center gap-2 py-2 border-b border-slate-100 last:border-0"><button type="button" onclick="pdEditRow('${esc(x.id)}')" class="flex-1 min-w-0 text-left"><div class="text-sm font-semibold">${fmt(x.s)} <span class="text-xs font-normal text-slate-400">${w}</span></div><div class="text-xs text-slate-500">共 ${x.n} 天${cyc>0?`・週期 ${cyc} 天`:""}</div></button><button type="button" onclick="pdDel('${esc(x.id)}')" aria-label="刪除" class="w-9 h-10 shrink-0 text-slate-400">✕</button></div>`}).join(""):`<div class="py-4 text-center text-xs text-slate-400">還沒有紀錄</div>`;
+}
+function openPd(){pdEdit=null;pdFill();renderPd();$("pdm").classList.remove("hidden");document.documentElement.style.overflow="hidden";$("pdm").scrollTop=0}
+function closePd(){$("pdm").classList.add("hidden");document.documentElement.style.overflow="";pdEdit=null}
+function pdEditRow(id){pdEdit=id;pdFill();$("pdm").scrollTop=0}
+function savePdForm(){
+  const s=$("pdDate").value,n=parseInt($("pdDaysIn").value,10),err=m=>{$("pdErr").textContent=m;$("pdErr").classList.remove("hidden")};
+  if(!s){err("請選擇第一天的日期");return}
+  if(!(n>=1&&n<=31)){err("天數請輸入 1 到 31");return}
+  const was=!!pdEdit;
+  if(pdEdit)PD=PD.filter(x=>x.id!==pdEdit);
+  const dup=PD.find(x=>x.s===s);
+  if(dup)dup.n=n;else PD.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),s,n});
+  PD=cleanPd(PD);savePd();pdEdit=null;pdFill();renderPd();
+  if(tab==="week")render();
+  showToast(was?"已更新經期紀錄":"已新增經期紀錄");
+}
+function pdDel(id){
+  const k=PD.findIndex(x=>x.id===id);if(k<0)return;
+  const r=PD.splice(k,1)[0];if(pdEdit===id)pdEdit=null;
+  savePd();pdFill();renderPd();if(tab==="week")render();
+  showToast("已刪除經期紀錄",()=>{PD.push(r);PD=cleanPd(PD);savePd();renderPd();if(tab==="week")render()});
 }
 /* 一週紀錄：設定當天類型 */
 let dtDate=null;
@@ -466,7 +540,7 @@ document.addEventListener("input",e=>{
 document.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.dataset.f==="plan"){e.preventDefault();const i=+e.target.dataset.i;day(wd).plan.splice(i+1,0,{t:"",c:false,l:0,k:(day(wd).plan[i]||{}).k||"",u:""});saveW();render();const n=document.querySelectorAll('[data-f="plan"]')[i+1];if(n)n.focus()}
   if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229&&e.target.id==="libTxt"){e.preventDefault();const lb=document.querySelector('[data-a="libadd"]');if(lb)lb.click()}
-  if(e.key==="Escape"){closeSheet();closeGoalModal();closeDateModal();closePicker();closeLink();closeDayType()}
+  if(e.key==="Escape"){closeSheet();closeGoalModal();closeDateModal();closePicker();closeLink();closeDayType();closePd()}
 });
 document.addEventListener("change",e=>{
   const t=e.target;
@@ -764,13 +838,13 @@ function go(t){
   $("hico").innerHTML=`<i data-lucide="${TABS.find(x=>x[0]===t)[2]}" class="w-6 h-6"></i>`;
   $("ttl").textContent=TABS.find(x=>x[0]===t)[1];
   if(t==="cardio"){setSub(sub);renderApp()}else render();
-  if(t!=="lib")libEdit=false;const on=t==="plan";$("tbtn").classList.toggle("hidden",!on);$("tbtn").classList.toggle("flex",on);lucide.createIcons();window.scrollTo({top:0});
+  if(t!=="lib")libEdit=false;const on=t==="plan";$("tbtn").classList.toggle("hidden",!on);$("tbtn").classList.toggle("flex",on);$("pbtn").classList.toggle("hidden",t!=="week");$("pbtn").classList.toggle("flex",t==="week");lucide.createIcons();window.scrollTo({top:0});
 }
 function updateThemeBtn(){$("themeBtn").innerHTML=`<i data-lucide="${document.documentElement.classList.contains("dark")?"sun":"moon"}" class="w-5 h-5"></i>`}
 function toggleTheme(){const d=document.documentElement.classList.toggle("dark");try{localStorage.setItem("WF_THEME",d?"dark":"light")}catch(e){}updateThemeBtn();lucide.createIcons()}
 function openBk(){$("bk").value="";$("bm").textContent="";$("bkm").classList.remove("hidden")}
 function expBk(){
-  appState.lastBackup=today();save();const t=$("bk");t.value=JSON.stringify({wk:W,wf:appState,lib:LIB});t.focus();t.select();
+  appState.lastBackup=today();save();const t=$("bk");t.value=JSON.stringify({wk:W,wf:appState,lib:LIB,pd:PD});t.focus();t.select();
   try{document.execCommand("copy")}catch(e){}try{navigator.clipboard&&navigator.clipboard.writeText(t.value)}catch(e){}
   $("bm").textContent="已匯出。若沒有自動複製，請長按文字框選「全選」再複製，貼到備忘錄保存。";
   if(tab==="cardio")renderApp();
@@ -783,6 +857,7 @@ function impBk(){
     if(wk&&typeof wk==="object"){Object.assign(W,wk);Object.values(W).forEach(x=>{(x.logs||[]).forEach(mig);migPlan(x)});saveW()}
     if(wf&&Array.isArray(wf.records)){appState=sanitize(wf);save()}
     if(Array.isArray(o.lib)){o.lib.forEach(x=>{if(x&&typeof x.t==="string"&&!LIB.some(y=>y.id===x.id||(y.c===(x.c||"")&&y.t===x.t)))LIB.push({id:String(x.id||Date.now()+Math.random()),c:String(x.c||""),t:x.t,u:String(x.u||"")})});saveLib()}
+    if(Array.isArray(o.pd)){PD=mergePd(o.pd);savePd()}
     go(tab);$("bm").textContent="匯入完成";
   });
 }
@@ -793,7 +868,7 @@ function generateAppIcons(){
   [[25,90],[55,90],[75,45],[95,135],[115,70],[130,90],[155,90]].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
   const u=cv.toDataURL("image/png");$("apple-touch-icon").href=u;$("app-favicon").href=u;
 }
-window.addEventListener("DOMContentLoaded",()=>{try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}generateAppIcons();loadW();loadLib();load();updateThemeBtn();go("plan")});
+window.addEventListener("DOMContentLoaded",()=>{try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}generateAppIcons();loadW();loadLib();loadPd();load();updateThemeBtn();go("plan")});
 if("serviceWorker"in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js").catch(()=>{})})}
 </script>
 </body>
