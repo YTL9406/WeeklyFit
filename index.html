@@ -894,7 +894,15 @@ function stampW(){Object.keys(W).forEach(d=>{const x=W[d];if(!x||typeof x!=="obj
 function cloudUser(){return window.WFC&&WFC.user&&WFC.user()}
 function touch(n){if(n!=="wk"){SM[n]=Date.now();saveSM()}schedSync()}
 function schedSync(){if(!cloudUser())return;clearTimeout(syncT);syncT=setTimeout(doSync,2500)}
-function mergeW(r){let ch=false;Object.keys(r||{}).forEach(d=>{const a=W[d],b=r[d];if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!b||typeof b!=="object")return;if(!a||(b._m||0)>(a._m||0)){(b.logs||[]).forEach(mig);migPlan(b);W[d]=b;stampCache[d]=dkey(d);ch=true}});return ch}
+function mergeW(r){let ch=false;Object.keys(r||{}).forEach(d=>{
+  const a=W[d],b=r[d];if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!b||typeof b!=="object")return;
+  const bm=b._m||0,am=a?(a._m||0):-1;
+  /* 遠端比較新；或時間相同（舊資料沒有時間戳）但本機這天是空的，就用遠端的 */
+  let take=!a||bm>am||(bm===am&&emptyDay(a)&&!emptyDay(b));
+  if(take){(b.logs||[]).forEach(mig);migPlan(b);W[d]=b;stampCache[d]=dkey(d);ch=true}
+  /* 兩邊都有內容、時間相同、但內容不同：保留本機並蓋上新時間，讓它同步出去 */
+  else if(bm===am&&!emptyDay(a)&&!emptyDay(b)&&JSON.stringify({...a,_m:0})!==JSON.stringify({...b,_m:0})){a._m=Date.now();ch=true}
+});return ch}
 const getLocal=n=>n==="lib"?LIB:n==="pd"?PD:appState;
 function rawSave(n){try{localStorage.setItem(n==="lib"?"wk-lib":n==="pd"?"wk-period":KEY,JSON.stringify(getLocal(n)))}catch(e){}}
 function applyRemote(n,v,t){
