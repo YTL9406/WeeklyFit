@@ -141,8 +141,8 @@
 </main>
 
 <footer class="max-w-md mx-auto w-full mt-6 text-center text-xs text-slate-400 space-y-1">
-  <button onclick="openBk()" class="underline py-1">備份 / 還原</button>
-  <p id="backupInfo"></p><p>數據保存在本機裝置</p>
+  <div class="flex justify-center gap-5"><button onclick="openCloud()" class="underline py-1">雲端同步</button><button onclick="openBk()" class="underline py-1">備份 / 還原</button></div>
+  <p id="syncInfo"></p><p id="backupInfo"></p><p>數據保存在本機裝置，登入後可同步雲端</p>
 </footer>
 
 
@@ -195,6 +195,12 @@
     <input type="date" id="modalStartDateInput" onchange="updateModalRangePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 font-medium" />
     <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-100 text-xs"><span class="text-sky-600 font-semibold block mb-0.5">自動區間：</span><span id="modalRangePreviewText" class="text-sky-900 font-bold"></span></div>
     <div class="flex gap-2 justify-end"><button onclick="closeDateModal()" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">取消</button><button onclick="saveDateModal()" class="px-4 py-2 rounded-lg bg-sky-500 text-white text-xs font-bold">確定更新</button></div>
+  </div>
+</div>
+<div id="cloudm" onclick="if(event.target===this)this.classList.add('hidden')" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+    <div class="flex justify-between items-center"><h3 class="text-sm font-bold">雲端同步</h3><button onclick="$('cloudm').classList.add('hidden')" aria-label="關閉" class="p-1 text-slate-400">✕</button></div>
+    <div id="cloudBody" class="space-y-3"></div>
   </div>
 </div>
 <div id="bkm" onclick="if(event.target===this)this.classList.add('hidden')" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -298,7 +304,7 @@ let W={},wd=today(),wkOff=0,tab="plan",sub="current";
 const CATS=["熱身","肌力","核心","耐力","爆發力","敏捷","有氧"];let planFocus=-1;
 let LIB=[],picked=new Set(),libCatSel=CATS[0];
 function loadLib(){try{LIB=JSON.parse(localStorage.getItem("wk-lib")||"[]");if(!Array.isArray(LIB))LIB=[]}catch(e){LIB=[]}}
-function saveLib(){try{localStorage.setItem("wk-lib",JSON.stringify(LIB))}catch(e){}}
+function saveLib(){try{localStorage.setItem("wk-lib",JSON.stringify(LIB))}catch(e){}touch("lib")}
 function parseAct(s){s=(s||"").trim();const m=s.match(/^【([^】]*)】\s*(.*)$/),c=m&&CATS.includes(m[1])?m[1]:"";return{c,t:(c?m[2]:s).trim()}}
 /* 串聯：以「分類 + 動作文字」判斷菜單與動作庫是否為同一個動作 */
 const libOf=p=>{const t=(p.t||"").trim();return t?LIB.find(x=>(x.c||"")===(p.k||"")&&(x.t||"").trim()===t)||null:null};
@@ -315,7 +321,7 @@ const blank=()=>({n:"",sets:[{w:"",r:""}],note:""});
 const empty=l=>!(l.n||l.note||(l.sets||[]).some(s=>s.w||s.r));
 function mig(l){if(!l.sets){const k=Math.min(Math.max(parseInt(l.s)||1,1),20);l.sets=Array.from({length:k},()=>({w:l.w||"",r:l.r||""}));delete l.w;delete l.s;delete l.r}}
 function loadW(){try{W=JSON.parse(localStorage.getItem("wk-data")||"{}")||{}}catch(e){W={}}Object.values(W).forEach(x=>{(x.logs||[]).forEach(mig);migPlan(x)})}
-function saveW(){try{localStorage.setItem("wk-data",JSON.stringify(W))}catch(e){}}
+function saveW(){stampW();try{localStorage.setItem("wk-data",JSON.stringify(W))}catch(e){}touch("wk")}
 const day=d=>W[d]||(W[d]={type:"",plan:[],logs:[]});
 const isDone=d=>{const x=W[d];return !!(x&&x.logs&&x.logs.some(l=>!empty(l)))};
 const wl=s=>{const d=parseDate(s);return (d.getMonth()+1)+"/"+d.getDate()+" "+WN[(d.getDay()+6)%7]+(s===today()?"（今天）":"")};
@@ -429,7 +435,7 @@ const daysBetween=(a,b)=>Math.round((parseDate(b)-parseDate(a))/864e5);
 function cleanPd(a){const seen=new Set();return(Array.isArray(a)?a:[]).filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.s)&&Number(x.n)>=1).map(x=>({id:String(x.id||Date.now().toString(36)+Math.random().toString(36).slice(2,6)),s:x.s,n:Math.min(Math.round(Number(x.n)),31)})).filter(x=>!seen.has(x.s)&&seen.add(x.s)).sort((a,b)=>b.s.localeCompare(a.s))}
 function mergePd(a){const m=new Map(PD.map(x=>[x.s,x]));cleanPd(a).forEach(x=>m.set(x.s,x));return cleanPd([...m.values()])}
 function loadPd(){try{PD=cleanPd(JSON.parse(localStorage.getItem("wk-period")||"[]"))}catch(e){PD=[]}}
-function savePd(){try{localStorage.setItem("wk-period",JSON.stringify(PD))}catch(e){showToast("儲存失敗（可能是無痕模式或空間已滿）")}}
+function savePd(){try{localStorage.setItem("wk-period",JSON.stringify(PD))}catch(e){showToast("儲存失敗（可能是無痕模式或空間已滿）")}touch("pd")}
 const pdOn=d=>{for(const x of PD){const k=daysBetween(x.s,d);if(k>=0&&k<x.n)return k+1}return 0};
 function pdSummary(){
   if(!PD.length)return["尚無紀錄","點開來新增第一筆"];
@@ -671,7 +677,7 @@ const isCardio=r=>ZONES.some(z=>z[0]===r.zone);
 const zoneInfo=z=>z==="無"?NONEZ:(ZONES.find(x=>x[0]===z)||ZONES[0]);
 const sum=r=>r.reduce((t,x)=>t+Number(x.duration),0);
 function calcStats(recs){const zones=Object.fromEntries(ZONES.map(z=>[z[0],0]));let total=0;recs.forEach(r=>{if(r.zone in zones){zones[r.zone]+=Number(r.duration);total+=Number(r.duration)}});return{total,zones}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(appState))}catch(e){showToast("儲存失敗（可能是無痕模式或空間已滿）")}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(appState))}catch(e){showToast("儲存失敗（可能是無痕模式或空間已滿）")}touch("wf")}
 function sanitize(d){
   const num=(x,def)=>(Number.isFinite(Number(x))&&Number(x)>0?Number(x):def);
   const recs=a=>(Array.isArray(a)?a:[]).filter(r=>r&&typeof r.date==="string"&&(Number(r.duration)>0||r.zone==="無")).map(r=>({id:String(r.id||Date.now()+Math.random()),date:r.date,type:String(r.type||"其他運動"),zone:String(r.zone||"Zone 2"),duration:Number(r.duration)||0,note:String(r.note||"")}));
@@ -868,8 +874,130 @@ function generateAppIcons(){
   [[25,90],[55,90],[75,45],[95,135],[115,70],[130,90],[155,90]].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
   const u=cv.toDataURL("image/png");$("apple-touch-icon").href=u;$("app-favicon").href=u;
 }
-window.addEventListener("DOMContentLoaded",()=>{try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}generateAppIcons();loadW();loadLib();loadPd();load();updateThemeBtn();go("plan")});
+window.addEventListener("DOMContentLoaded",()=>{try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}generateAppIcons();loadW();loadLib();loadPd();load();initStamp();loadSM();updateThemeBtn();go("plan");cloudInit()});
 if("serviceWorker"in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js").catch(()=>{})})}
+
+/* ============ 雲端同步（Firebase：Google 登入 + Firestore）============
+   資料分成幾份存在 users/{uid}/sync/ 底下：
+   wk-YYYY-MM = 每月的訓練菜單（以「天」為單位，誰最後改就用誰的）
+   lib / pd / wf = 動作庫 / 經期 / 有氧（整份以最後修改時間為準）            */
+let SM={wk:0,wf:0,lib:0,pd:0,uid:"",ls:0},stampCache={},syncing=false,again=false,syncT=0,syncMsg="";
+const to=(p,ms)=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>j(new Error("timeout")),ms||15000))]);
+function loadSM(){try{SM={...SM,...JSON.parse(localStorage.getItem("wk-sync")||"{}")}}catch(e){}}
+function saveSM(){try{localStorage.setItem("wk-sync",JSON.stringify(SM))}catch(e){}}
+const emptyDay=x=>!x||(!(x.tags&&x.tags.length)&&!x.done&&!(x.plan||[]).some(p=>(p.t||"").trim())&&!(x.logs||[]).some(l=>!empty(l)));
+const syncable=x=>!!x&&typeof x==="object"&&(!emptyDay(x)||!!x._m);
+const dkey=d=>JSON.stringify({...W[d],_m:0});
+function initStamp(){stampCache={};Object.keys(W).forEach(d=>{if(W[d]&&typeof W[d]==="object")stampCache[d]=dkey(d)})}
+/* 每天的資料有變動就蓋上修改時間 _m，合併時用來判斷誰比較新 */
+function stampW(){Object.keys(W).forEach(d=>{const x=W[d];if(!x||typeof x!=="object")return;const s=dkey(d),c=stampCache[d];if(c===s)return;stampCache[d]=s;if(c===undefined&&emptyDay(x)&&!x._m)return;x._m=Date.now()})}
+function cloudUser(){return window.WFC&&WFC.user&&WFC.user()}
+function touch(n){if(n!=="wk"){SM[n]=Date.now();saveSM()}schedSync()}
+function schedSync(){if(!cloudUser())return;clearTimeout(syncT);syncT=setTimeout(doSync,2500)}
+function mergeW(r){let ch=false;Object.keys(r||{}).forEach(d=>{const a=W[d],b=r[d];if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!b||typeof b!=="object")return;if(!a||(b._m||0)>(a._m||0)){(b.logs||[]).forEach(mig);migPlan(b);W[d]=b;stampCache[d]=dkey(d);ch=true}});return ch}
+const getLocal=n=>n==="lib"?LIB:n==="pd"?PD:appState;
+function rawSave(n){try{localStorage.setItem(n==="lib"?"wk-lib":n==="pd"?"wk-period":KEY,JSON.stringify(getLocal(n)))}catch(e){}}
+function applyRemote(n,v,t){
+  if(n==="lib")LIB=Array.isArray(v)?v:[];else if(n==="pd")PD=cleanPd(v);else appState=sanitize(v);
+  rawSave(n);SM[n]=t;
+}
+/* 第一次在這台裝置登入：雲端與本機資料合併，不互相覆蓋 */
+function mergeFirst(n,rv){
+  if(n==="lib"){
+    const r=(Array.isArray(rv)?rv:[]).filter(x=>x&&typeof x.t==="string"),seen=new Set(r.map(x=>(x.c||"")+"|"+x.t));
+    LIB=[...r,...LIB.filter(x=>!seen.has((x.c||"")+"|"+x.t))];
+  }else if(n==="pd"){PD=mergePd(rv)}
+  else{
+    const r=sanitize(rv),l=appState,hid=new Set(r.history.map(h=>h.id));
+    r.history=[...r.history,...l.history.filter(h=>!hid.has(h.id))].sort((a,b)=>b.startDateStr.localeCompare(a.startDateStr));
+    if(l.startDateStr===r.startDateStr){const rid=new Set(r.records.map(x=>x.id));r.records=[...r.records,...l.records.filter(x=>!rid.has(x.id))]}
+    r.types=[...new Set([...r.types,...l.types])];appState=r;
+  }
+  rawSave(n);
+}
+const fmtT=t=>{const d=new Date(t);return (d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes())};
+function setSync(m){syncMsg=m;renderCloud()}
+async function doSync(){
+  const u=cloudUser();if(!u)return;
+  if(syncing){again=true;return}
+  syncing=true;setSync("同步中…");
+  try{
+    const R=await to(WFC.read()),first=SM.uid!==u.uid,jobs=[];let chg=false;const rm={};
+    Object.keys(R).filter(k=>k.startsWith("wk-")).forEach(k=>{let o={};try{o=JSON.parse(R[k].d)||{}}catch(e){}rm[k]=o;if(mergeW(o))chg=true});
+    if(chg)try{localStorage.setItem("wk-data",JSON.stringify(W))}catch(e){}
+    const need={};
+    Object.keys(W).forEach(d=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!syncable(W[d]))return;const k="wk-"+d.slice(0,7),r=rm[k]&&rm[k][d];if(!r||(W[d]._m||0)>(r._m||0))need[k]=1});
+    Object.keys(need).forEach(k=>{const o={};Object.keys(W).forEach(d=>{if(d.slice(0,7)===k.slice(3)&&syncable(W[d]))o[d]=W[d]});jobs.push(to(WFC.write(k,JSON.stringify(o),Date.now())))});
+    for(const n of ["lib","pd","wf"]){
+      let rv=null,rt=0;const lt=SM[n]||0;
+      if(R[n]){try{rv=JSON.parse(R[n].d);rt=R[n].t||0}catch(e){}}
+      if(rv==null){
+        if(n==="wf"||getLocal(n).length){const t=lt||Date.now();SM[n]=t;jobs.push(to(WFC.write(n,JSON.stringify(getLocal(n)),t)))}
+      }else if(first){mergeFirst(n,rv);const t=Date.now();SM[n]=t;jobs.push(to(WFC.write(n,JSON.stringify(getLocal(n)),t)));chg=true}
+      else if(rt>lt){applyRemote(n,rv,rt);chg=true}
+      else if(lt>rt){jobs.push(to(WFC.write(n,JSON.stringify(getLocal(n)),lt)))}
+    }
+    await Promise.all(jobs);
+    SM.uid=u.uid;SM.ls=Date.now();saveSM();setSync("已同步 "+fmtT(SM.ls));
+    if(chg)refresh();
+  }catch(e){setSync(navigator.onLine?"同步失敗，稍後會自動重試（"+(e.code||e.message)+"）":"目前離線，連線後會自動同步")}
+  finally{syncing=false;if(again){again=false;schedSync()}}
+}
+function renderCloud(){
+  const c=window.WFC,u=cloudUser(),b=$("cloudBody");let h="";
+  const btn=(t,f,cls)=>`<button onclick="${f}" class="w-full py-3 rounded-xl text-sm font-bold ${cls}">${t}</button>`;
+  if(!c)h=`<p class="text-xs text-slate-500">雲端功能尚未載入，可能目前離線。連上網路後重新開啟即可；本機資料不受影響。</p>`;
+  else if(!c.configured)h=`<p class="text-xs text-slate-500">尚未設定 Firebase。請先在 index.html 的 FIREBASE_CONFIG 填入專案設定。</p>`;
+  else if(!u)h=`<p class="text-xs text-slate-500">登入 Google 帳號後，訓練菜單、動作庫、有氧與經期紀錄會自動同步到雲端。換裝置登入同一個帳號就能看到。</p>`+btn("使用 Google 登入","cloudLogin()","bg-sky-500 text-white");
+  else h=`<div class="text-sm font-semibold break-words">${esc(u.email||u.displayName||"已登入")}</div><p class="text-xs text-slate-500">${esc(syncMsg||"已登入")}</p>`+btn("立即同步","doSync()","bg-sky-500 text-white")+btn("登出","cloudLogout()","bg-slate-100 text-slate-600");
+  if(b)b.innerHTML=h;
+  const f=$("syncInfo");if(f)f.textContent=u?"☁️ "+(syncMsg||"已登入"):"";
+}
+function openCloud(){renderCloud();$("cloudm").classList.remove("hidden")}
+async function cloudLogin(){try{await WFC.signIn()}catch(e){showToast("登入失敗："+(e.code||e.message))}}
+function cloudLogout(){ask("登出後，這台裝置的資料仍會保留，但不會再同步。確定登出？",()=>{WFC.signOut().then(()=>{syncMsg="";renderCloud()})})}
+function onAuth(){renderCloud();if(cloudUser())doSync()}
+function cloudInit(){
+  window.addEventListener("wfc-auth",onAuth);window.addEventListener("wfc-ready",onAuth);
+  window.addEventListener("online",schedSync);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedSync()});
+  if(window.WFC)onAuth();else renderCloud();
+}
+</script>
+<script type="module">
+/* ★ 設定：到 Firebase 主控台 → 專案設定 → 你的應用程式（網頁），把設定值貼到這裡 */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyBde6-qRSJooNJgv-EUislxmPA0W5gbKpM",
+  authDomain:"weekly-fit-9406.firebaseapp.com",
+  projectId:"weekly-fit-9406",
+  appId:"1:913159923105:web:01a651e632e3c60082d7e0"
+};
+(async()=>{
+  if(!FIREBASE_CONFIG.apiKey||/^YOUR_/.test(FIREBASE_CONFIG.apiKey)){window.WFC={configured:false};window.dispatchEvent(new Event("wfc-ready"));return}
+  try{
+    const V="10.14.1",B="https://www.gstatic.com/firebasejs/"+V+"/";
+    const [A,AU,FS]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
+    const app=A.initializeApp(FIREBASE_CONFIG),auth=AU.getAuth(app),db=FS.getFirestore(app);
+    const prov=new AU.GoogleAuthProvider();prov.setCustomParameters({prompt:"select_account"});
+    window.WFC={configured:true,
+      user:()=>auth.currentUser,
+      async signIn(){
+        try{await AU.signInWithPopup(auth,prov)}
+        catch(e){
+          if(["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].includes(e.code)){await AU.signInWithRedirect(auth,prov);return}
+          if(e.code==="auth/popup-closed-by-user"||e.code==="auth/cancelled-popup-request")return;
+          throw e;
+        }
+      },
+      signOut:()=>AU.signOut(auth),
+      async read(){const u=auth.currentUser,s=await FS.getDocs(FS.collection(db,"users",u.uid,"sync")),o={};s.forEach(d=>o[d.id]=d.data());return o},
+      write(n,d,t){return FS.setDoc(FS.doc(db,"users",auth.currentUser.uid,"sync",n),{d,t})}
+    };
+    AU.getRedirectResult(auth).catch(()=>{});
+    AU.onAuthStateChanged(auth,()=>window.dispatchEvent(new Event("wfc-auth")));
+    window.dispatchEvent(new Event("wfc-ready"));
+  }catch(e){/* 離線或載入失敗：App 仍可正常使用，只是暫時沒有雲端同步 */}
+})();
 </script>
 </body>
 </html>
