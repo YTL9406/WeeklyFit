@@ -141,7 +141,7 @@
 </main>
 
 <footer class="max-w-md mx-auto w-full mt-6 text-center text-xs text-slate-400 space-y-1">
-  <div class="flex justify-center" style="gap:28px"><button onclick="openCloud()" class="underline py-1 px-2 text-sky-600 font-bold">☁️ 雲端同步登入</button><button onclick="openBk()" class="underline py-1 px-2">備份 / 還原</button></div>
+  <div class="flex justify-center" style="gap:28px"><button onclick="openCloud()" class="underline py-1 px-2 text-sky-600 font-bold">雲端同步</button><button onclick="openBk()" class="underline py-1 px-2">備份 / 還原</button></div>
   <p id="syncInfo"></p><p id="backupInfo"></p><p>數據保存在本機裝置，登入後可同步雲端</p>
 </footer>
 
@@ -948,12 +948,26 @@ function renderCloud(){
   const btn=(t,f,cls)=>`<button onclick="${f}" class="w-full py-3 rounded-xl text-sm font-bold ${cls}">${t}</button>`;
   if(!c)h=`<p class="text-xs text-slate-500">雲端功能尚未載入，可能目前離線。連上網路後重新開啟即可；本機資料不受影響。</p>`;
   else if(!c.configured)h=`<p class="text-xs text-slate-500">尚未設定 Firebase。請先在 index.html 的 FIREBASE_CONFIG 填入專案設定。</p>`;
-  else if(!u)h=`<p class="text-xs text-slate-500">登入 Google 帳號後，訓練菜單、動作庫、有氧與經期紀錄會自動同步到雲端。換裝置登入同一個帳號就能看到。</p>`+btn("使用 Google 登入","cloudLogin()","bg-sky-500 text-white");
+  else if(!u)h=`<p class="text-xs text-slate-500">登入後，訓練菜單、動作庫、有氧與經期紀錄會自動同步到雲端。所有裝置請使用同一組帳號與同一種登入方式。</p><input id="cloudEm" type="email" autocomplete="email" inputmode="email" placeholder="Email" class="${INP}"><input id="cloudPw" type="password" autocomplete="current-password" placeholder="密碼（至少 6 個字元）" class="${INP}"><div class="grid grid-cols-2 gap-2">`+btn("登入","emailAuth('in')","bg-sky-500 text-white")+btn("註冊新帳號","emailAuth('up')","bg-slate-100 text-slate-600")+`</div><button onclick="emailReset()" class="w-full py-2 text-xs text-slate-500 underline">忘記密碼</button>`+btn("使用 Google 登入","cloudLogin()","bg-slate-100 text-slate-600");
   else h=`<div class="text-sm font-semibold break-words">${esc(u.email||u.displayName||"已登入")}</div><p class="text-xs text-slate-500">${esc(syncMsg||"已登入")}</p>`+btn("立即同步","doSync()","bg-sky-500 text-white")+btn("登出","cloudLogout()","bg-slate-100 text-slate-600");
   if(b)b.innerHTML=h;
-  const f=$("syncInfo");if(f)f.textContent=u?"☁️ "+(syncMsg||"已登入"):"";
+  const f=$("syncInfo");if(f)f.textContent=u?(syncMsg||"已登入"):"";
 }
 function openCloud(){renderCloud();$("cloudm").classList.remove("hidden")}
+function authMsg(e){
+  const c=e&&e.code||"",m={"auth/invalid-credential":"Email 或密碼不正確","auth/wrong-password":"Email 或密碼不正確","auth/user-not-found":"Email 或密碼不正確","auth/email-already-in-use":"這個 Email 已經註冊過，請直接登入","auth/weak-password":"密碼至少需要 6 個字元","auth/invalid-email":"Email 格式不正確","auth/too-many-requests":"嘗試次數過多，請稍後再試","auth/network-request-failed":"網路連線失敗","auth/operation-not-allowed":"尚未在 Firebase 啟用「電子郵件/密碼」登入"};
+  return m[c]||"登入失敗："+(c||(e&&e.message)||"未知錯誤");
+}
+async function emailAuth(mode){
+  const em=($("cloudEm").value||"").trim(),pw=$("cloudPw").value||"";
+  if(!em||!pw){showToast("請輸入 Email 和密碼");return}
+  try{await (mode==="up"?WFC.emailUp(em,pw):WFC.emailIn(em,pw))}catch(e){showToast(authMsg(e))}
+}
+async function emailReset(){
+  const em=($("cloudEm").value||"").trim();
+  if(!em){showToast("請先在上方輸入你的 Email");return}
+  try{await WFC.reset(em);showToast("已寄出重設密碼信，請到信箱查看")}catch(e){showToast(authMsg(e))}
+}
 async function cloudLogin(){try{await WFC.signIn()}catch(e){showToast("登入失敗："+(e.code||e.message))}}
 function cloudLogout(){ask("登出後，這台裝置的資料仍會保留，但不會再同步。確定登出？",()=>{WFC.signOut().then(()=>{syncMsg="";renderCloud()})})}
 function onAuth(){renderCloud();if(cloudUser())doSync()}
@@ -990,6 +1004,9 @@ const FIREBASE_CONFIG={
         }
       },
       signOut:()=>AU.signOut(auth),
+      emailIn:(e,p)=>AU.signInWithEmailAndPassword(auth,e,p),
+      emailUp:(e,p)=>AU.createUserWithEmailAndPassword(auth,e,p),
+      reset:e=>AU.sendPasswordResetEmail(auth,e),
       async read(){const u=auth.currentUser,s=await FS.getDocs(FS.collection(db,"users",u.uid,"sync")),o={};s.forEach(d=>o[d.id]=d.data());return o},
       write(n,d,t){return FS.setDoc(FS.doc(db,"users",auth.currentUser.uid,"sync",n),{d,t})}
     };
