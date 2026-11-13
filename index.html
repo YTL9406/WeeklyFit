@@ -299,7 +299,7 @@ const NB="w-11 h-11 shrink-0 rounded-xl bg-white border border-slate-100 shadow-
 const XB="w-11 shrink-0 rounded-xl bg-slate-100 text-slate-400";
 const ADD="w-full py-3 rounded-xl border border-dashed border-sky-400 text-sky-600 text-sm font-bold";
 const CK='<svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
-function migPlan(x){x.plan=(Array.isArray(x.plan)?x.plan:[]).map(p=>{p=typeof p==="string"?{t:p,c:false,l:0}:{...p,l:0};if(p.k===undefined){const a=parseAct(p.t);p.k=a.c;if(a.c)p.t=a.t}if(p.u===undefined)p.u="";return p})}
+function migPlan(x){x.plan=(Array.isArray(x.plan)?x.plan:[]).map(p=>{p=typeof p==="string"?{t:p,c:false,l:0}:{...p,l:0};if(p.k===undefined){const a=parseAct(p.t);p.k=a.c;if(a.c)p.t=a.t}if(p.u===undefined)p.u="";p.s=Math.min(Math.max(parseInt(p.s)||0,0),99);return p})}
 let W={},wd=today(),wkOff=0,tab="plan",sub="current";
 const CATS=["熱身","肌力","核心","耐力","爆發力","敏捷","有氧"];let planFocus=-1;
 let LIB=[],picked=new Set(),libCatSel=CATS[0];
@@ -354,11 +354,11 @@ function vPlan(){
     const done=!!p.c;
     if(!ed){
       const txt=p.u?`<a href="${esc(p.u)}" target="_blank" rel="noopener noreferrer" class="${done?"text-slate-400 line-through":"text-sky-600 underline decoration-sky-300 underline-offset-2"}">${esc(p.t)}</a>`:esc(p.t);
-      return `<div class="pr ${done?"done":""} flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">${CKB(p,i,"mt-0.5")}<div class="min-w-0 flex-1 text-sm font-semibold leading-snug break-words ${done&&!p.u?"line-through text-slate-400":""}">${tagH(p.k,"mr-1.5")}${txt}</div></div>`;
+      return `<div class="pr ${done?"done":""} flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">${CKB(p,i,"mt-0.5")}<div class="min-w-0 flex-1 text-sm font-semibold leading-snug break-words ${done&&!p.u?"line-through text-slate-400":""}">${tagH(p.k,"mr-1.5")}${txt}</div>${p.s?`<span class="tg shrink-0" style="margin-top:2px;font-size:12px">${p.s} 組</span>`:""}</div>`;
     }
     const ta=`<textarea rows="1" data-f="plan" data-i="${i}" placeholder="例如：胸推 12下/組 *3組" class="pi sm w-full min-w-0 px-2 py-2 text-sm font-semibold resize-none overflow-hidden leading-snug ${done?"line-through text-slate-400":""}">${esc(p.t)}</textarea>`;
     const ctl=`<div class="pctl flex shrink-0 items-center"><button data-a="savelib" data-i="${i}" aria-label="加入動作庫" class="w-8 h-10 text-lg ${inLib(p)?"text-sky-500":"text-slate-400"}">${inLib(p)?"★":"☆"}</button><button data-a="plink" data-i="${i}" aria-label="示範連結" class="w-8 h-10 flex items-center justify-center ${p.u?"text-sky-500":"text-slate-400"}">${LKI}</button><button data-a="delplan" data-i="${i}" aria-label="刪除" class="w-8 h-10 text-slate-400">✕</button></div>`;
-    return `<div data-row="${i}" class="pr ${done?"done":""} flex items-start gap-1.5" style="margin-top:${i>0?6:0}px"><button type="button" data-drag="${i}" aria-label="拖曳排序" class="grip w-6 h-10 shrink-0 flex items-center justify-center text-slate-400 ${p.k?"mt-6":""}">${GRIP}</button>${CKB(p,i,p.k?"mt-8":"mt-2")}<div class="min-w-0 flex-1">${p.k?`<div class="px-2 pt-1">${tagH(p.k)}</div>`:""}${ta}</div>${ctl}</div>`}).join("");
+    return `<div data-row="${i}" class="pr ${done?"done":""} flex items-start gap-1.5" style="margin-top:${i>0?6:0}px"><button type="button" data-drag="${i}" aria-label="拖曳排序" class="grip w-6 h-10 shrink-0 flex items-center justify-center text-slate-400 ${p.k?"mt-6":""}">${GRIP}</button>${CKB(p,i,p.k?"mt-8":"mt-2")}<div class="min-w-0 flex-1">${p.k?`<div class="px-2 pt-1">${tagH(p.k)}</div>`:""}${ta}<div class="px-2 pb-1 flex items-center gap-2 text-xs font-semibold text-slate-500"><span>組數</span><input type="number" inputmode="numeric" min="0" max="99" placeholder="0" data-f="sets" data-i="${i}" value="${p.s||""}" aria-label="組數" class="w-16 px-2 py-1.5 text-center bg-slate-50 border border-slate-200 font-bold"><span>組</span></div></div>${ctl}</div>`}).join("");
   const foot=ed?`<div class="flex items-center justify-between pt-2 mt-3 border-t border-slate-100"><button data-a="addplan" class="px-2 py-2 text-sm font-bold text-sky-600">＋ 新增項目</button><button data-a="openpick" class="px-2 py-2 text-sm font-semibold text-slate-500">從動作庫加入</button></div>`:"";
   return `<div class="space-y-3">`+navDate()+`<div class="${CARD} !p-4">${head}${chips}${rows}${foot}</div></div>`;
 }
@@ -539,6 +539,7 @@ document.addEventListener("input",e=>{
   }
   const d=day(wd),i=+t.dataset.i;
   if(f==="plan"){d.plan[i].t=t.value;if(t.scrollHeight){t.style.height="auto";t.style.height=t.scrollHeight+"px"}}
+  else if(f==="sets"){if(d.plan[i])d.plan[i].s=Math.min(Math.max(parseInt(t.value)||0,0),99)}
   else if(f==="w"||f==="r"){const s=d.logs[i]&&d.logs[i].sets[+t.dataset.j];if(s)s[f]=t.value}
   else if(d.logs[i])d.logs[i][f]=t.value;
   saveW();
